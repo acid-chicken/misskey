@@ -174,33 +174,19 @@ export default define({
 
 <style lang="stylus" scoped>
 root(isDark)
+	display grid
+	grid-gap 10px
+	padding 10px
+
 	&.dual
-		> svg
-			width 50%
-			float left
+		grid auto / repeat(2, 1fr)
 
-			&:first-child
-				padding-right 5px
-
-			&:last-child
-				padding-left 5px
-
-	> svg
-		display block
-		padding 10px
-		width 100%
-
-		> text
+	> svg > text
 			font-size 5px
 			fill isDark ? rgba(#fff, 0.55) : rgba(#000, 0.55)
 
-			> tspan
-				opacity 0.5
-
-	&:after
-		content ""
-		display block
-		clear both
+		> tspan
+			opacity 0.5
 
 .qpdmibaztplkylerhdbllwcokyrfxeyj[data-darkmode]
 	root(true)
