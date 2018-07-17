@@ -47,31 +47,21 @@ export default Vue.extend({
 
 <style lang="stylus" scoped>
 root(isDark)
-	> .pie
-		padding 10px
-		height 100px
-		float left
+	display grid
+	grid 80px / 80px 1fr
+	grid-gap 10px
+	padding 10px
 
-	> div
-		float left
-		width calc(100% - 100px)
-		padding 10px 10px 10px 0
+	> div > p
+		margin 0
+		font-size 12px
+		color isDark ? #a8b4bd : #505050
 
-		> p
-			margin 0
-			font-size 12px
-			color isDark ? #a8b4bd : #505050
+		&:first-child
+			font-weight bold
 
-			&:first-child
-				font-weight bold
-
-				> [data-fa]
-					margin-right 4px
-
-	&:after
-		content ""
-		display block
-		clear both
+			> [data-fa]
+				margin-right 4px
 
 .memory[data-darkmode]
 	root(true)
