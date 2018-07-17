@@ -131,29 +131,17 @@ export default Vue.extend({
 
 <style lang="stylus" scoped>
 root(isDark)
-	> svg
-		display block
-		padding 10px
-		width 50%
-		float left
+	display grid
+	grid auto / repeat(2, 1fr)
+	grid-gap 10px
+	padding 10px
 
-		&:first-child
-			padding-right 5px
+	> svg > text
+		font-size 5px
+		fill isDark ? rgba(#fff, 0.55) : rgba(#000, 0.55)
 
-		&:last-child
-			padding-left 5px
-
-		> text
-			font-size 5px
-			fill isDark ? rgba(#fff, 0.55) : rgba(#000, 0.55)
-
-			> tspan
-				opacity 0.5
-
-	&:after
-		content ""
-		display block
-		clear both
+		> tspan
+			opacity 0.5
 
 .cpu-memory[data-darkmode]
 	root(true)
