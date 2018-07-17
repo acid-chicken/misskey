@@ -182,8 +182,8 @@ root(isDark)
 		grid auto / repeat(2, 1fr)
 
 	> svg > text
-			font-size 5px
-			fill isDark ? rgba(#fff, 0.55) : rgba(#000, 0.55)
+		font-size 5px
+		fill isDark ? rgba(#fff, 0.55) : rgba(#000, 0.55)
 
 		> tspan
 			opacity 0.5
