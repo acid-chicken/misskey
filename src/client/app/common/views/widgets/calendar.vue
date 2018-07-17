@@ -115,17 +115,15 @@ root(isDark)
 		border-color #ef95a0
 
 	.mkw-calendar--body
+		display grid
+		grid auto / 3fr 2fr
 		padding 16px 0
 		color isDark ? #c5ced6 : #777
 
-		&:after
-			content ""
-			display block
-			clear both
-
 		> .calendar
-			float left
-			width 60%
+			display grid
+			grid 18px 32px 18px / auto
+			grid-gap 10px
 			text-align center
 
 			&[data-is-holiday]
@@ -141,21 +139,16 @@ root(isDark)
 					margin 0 4px
 
 			> .day
-				margin 10px 0
 				line-height 32px
 				font-size 28px
 
 		> .info
-			display block
-			float left
-			width 40%
-			padding 0 16px 0 0
+			display grid
+			grid repeat(3, 1fr) / auto
+			grid-gap 4px
 
 			> div
-				margin-bottom 8px
-
-				&:last-child
-					margin-bottom 4px
+				padding 0 16px 4px 0
 
 				> p
 					margin 0 0 2px 0
@@ -167,7 +160,6 @@ root(isDark)
 						margin-left 2px
 
 				> .meter
-					width 100%
 					overflow hidden
 					background isDark ? #1c1f25 : #eee
 					border-radius 8px
