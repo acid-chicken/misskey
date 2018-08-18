@@ -132,6 +132,10 @@ root(isDark)
 			height 36px
 			border-radius 6px
 
+			&::before,
+			&::after
+				border-width 2px
+
 			@media (min-width 500px)
 				width 42px
 				height 42px
