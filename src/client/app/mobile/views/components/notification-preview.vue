@@ -97,6 +97,10 @@ export default Vue.extend({
 		height 36px
 		border-radius 6px
 
+		&::before,
+		&::after
+			border-width: 2px
+
 	> .text
 		float right
 		width calc(100% - 36px)
