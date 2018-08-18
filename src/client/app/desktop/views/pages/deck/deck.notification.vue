@@ -127,6 +127,10 @@ root(isDark)
 			height 36px
 			border-radius 6px
 
+			&::before,
+			&::after
+				border-width: 2px
+
 		> div
 			float right
 			width calc(100% - 36px)
