@@ -1,12 +1,12 @@
 <template>
 <div class="welcome">
 	<div>
-		<img :src="$store.state.device.darkmode ? 'assets/title.dark.svg' : 'assets/title.light.svg'" alt="Misskey">
+		<img :src="$store.state.device.darkmode ? 'assets/title.dark.svg' : 'assets/title.light.svg'" :alt="name">
 		<p class="host">{{ host }}</p>
 		<div class="about">
-			<h2>{{ name || 'unidentified' }}</h2>
+			<h2>{{ name }}</h2>
 			<p v-html="description || '%i18n:common.about%'"></p>
-			<router-link class="signup" to="/signup">新規登録</router-link>
+			<router-link class="signup" to="/signup">%i18n:@signup%</router-link>
 		</div>
 		<div class="login">
 			<mk-signin :with-avatar="false"/>
@@ -30,7 +30,7 @@
 
 <script lang="ts">
 import Vue from 'vue';
-import { apiUrl, copyright, host, name, description } from '../../../config';
+import { apiUrl, copyright, host } from '../../../config';
 
 export default Vue.extend({
 	data() {
@@ -39,12 +39,17 @@ export default Vue.extend({
 			copyright,
 			stats: null,
 			host,
-			name,
-			description,
+			name: 'Misskey',
+			description: '',
 			tags: []
 		};
 	},
 	created() {
+		(this as any).os.getMeta().then(meta => {
+			this.name = meta.name;
+			this.description = meta.description;
+		});
+
 		(this as any).api('stats').then(stats => {
 			this.stats = stats;
 		});

@@ -2,7 +2,7 @@ import User, { isLocalUser, isRemoteUser, pack as packUser, IUser } from '../../
 import Following from '../../models/following';
 import FollowingLog from '../../models/following-log';
 import FollowedLog from '../../models/followed-log';
-import event from '../../stream';
+import { publishUserStream } from '../../stream';
 import notify from '../../notify';
 import pack from '../../remote/activitypub/renderer';
 import renderFollow from '../../remote/activitypub/renderer/follow';
@@ -11,7 +11,7 @@ import { deliver } from '../../queue';
 import createFollowRequest from './requests/create';
 
 export default async function(follower: IUser, followee: IUser) {
-	if (followee.isLocked) {
+	if (followee.isLocked || isLocalUser(follower) && isRemoteUser(followee)) {
 		await createFollowRequest(follower, followee);
 	} else {
 		const following = await Following.insert({
@@ -22,11 +22,13 @@ export default async function(follower: IUser, followee: IUser) {
 			// 非正規化
 			_follower: {
 				host: follower.host,
-				inbox: isRemoteUser(follower) ? follower.inbox : undefined
+				inbox: isRemoteUser(follower) ? follower.inbox : undefined,
+				sharedInbox: isRemoteUser(follower) ? follower.sharedInbox : undefined
 			},
 			_followee: {
 				host: followee.host,
-				inbox: isRemoteUser(followee) ? followee.inbox : undefined
+				inbox: isRemoteUser(followee) ? followee.inbox : undefined,
+				sharedInbox: isRemoteUser(followee) ? followee.sharedInbox : undefined
 			}
 		});
 
@@ -59,20 +61,15 @@ export default async function(follower: IUser, followee: IUser) {
 
 		// Publish follow event
 		if (isLocalUser(follower)) {
-			packUser(followee, follower).then(packed => event(follower._id, 'follow', packed));
+			packUser(followee, follower).then(packed => publishUserStream(follower._id, 'follow', packed));
 		}
 
 		// Publish followed event
 		if (isLocalUser(followee)) {
-			packUser(follower, followee).then(packed => event(followee._id, 'followed', packed)),
+			packUser(follower, followee).then(packed => publishUserStream(followee._id, 'followed', packed)),
 
 			// 通知を作成
 			notify(followee._id, follower._id, 'follow');
-		}
-
-		if (isLocalUser(follower) && isRemoteUser(followee)) {
-			const content = pack(renderFollow(follower, followee));
-			deliver(follower, content, followee.inbox);
 		}
 
 		if (isRemoteUser(follower) && isLocalUser(followee)) {

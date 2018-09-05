@@ -69,18 +69,21 @@ export async function createNote(value: any, resolver?: Resolver, silent = false
 	if (!note.to.includes('https://www.w3.org/ns/activitystreams#Public')) {
 		if (note.cc.includes('https://www.w3.org/ns/activitystreams#Public')) {
 			visibility = 'home';
+		} else if (note.to.includes(`${actor.uri}/followers`)) {	// TODO: person.followerと照合するべき？
+			visibility = 'followers';
 		} else {
 			visibility = 'specified';
 			visibleUsers = await Promise.all(note.to.map(uri => resolvePerson(uri)));
 		}
 	}
-	if (note.cc.length == 0) visibility = 'followers';
 	//#endergion
 
 	// 添付メディア
 	// TODO: attachmentは必ずしもImageではない
 	// TODO: attachmentは必ずしも配列ではない
+	// Noteがsensitiveなら添付もsensitiveにする
 	const media = note.attachment
+		.map(attach => attach.sensitive = note.sensitive)
 		? await Promise.all(note.attachment.map(x => resolveImage(actor, x)))
 		: [];
 
@@ -128,5 +131,7 @@ export async function resolveNote(value: string | IObject, resolver?: Resolver):
 	//#endregion
 
 	// リモートサーバーからフェッチしてきて登録
-	return await createNote(value, resolver);
+	// ここでuriの代わりに添付されてきたNote Objectが指定されていると、サーバーフェッチを経ずにノートが生成されるが
+	// 添付されてきたNote Objectは偽装されている可能性があるため、常にuriを指定してサーバーフェッチを行う。
+	return await createNote(uri, resolver);
 }

@@ -1,13 +1,23 @@
 import $ from 'cafy'; import ID from '../../../../misc/cafy-id';
 import User, { isValidName, isValidDescription, isValidLocation, isValidBirthday, pack, ILocalUser } from '../../../../models/user';
-import event from '../../../../stream';
+import { publishUserStream } from '../../../../stream';
 import DriveFile from '../../../../models/drive-file';
 import acceptAllFollowRequests from '../../../../services/following/requests/accept-all';
 import { IApp } from '../../../../models/app';
+import config from '../../../../config';
+import { publishToFollowers } from '../../../../services/i/update';
 
-/**
- * Update myself
- */
+export const meta = {
+	desc: {
+		'ja-JP': 'アカウント情報を更新します。',
+		'en-US': 'Update myself'
+	},
+
+	requireCredential: true,
+
+	kind: 'account-write'
+};
+
 export default async (params: any, user: ILocalUser, app: IApp) => new Promise(async (res, rej) => {
 	const isSecure = user != null && app == null;
 
@@ -73,7 +83,11 @@ export default async (params: any, user: ILocalUser, app: IApp) => new Promise(a
 			_id: avatarId
 		});
 
-		if (avatar != null && avatar.metadata.properties.avgColor) {
+		if (avatar == null) return rej('avatar not found');
+
+		updates.avatarUrl = avatar.metadata.thumbnailUrl || avatar.metadata.url || `${config.drive_url}/${avatar._id}`;
+
+		if (avatar.metadata.properties.avgColor) {
 			updates.avatarColor = avatar.metadata.properties.avgColor;
 		}
 	}
@@ -83,18 +97,31 @@ export default async (params: any, user: ILocalUser, app: IApp) => new Promise(a
 			_id: bannerId
 		});
 
-		if (banner != null && banner.metadata.properties.avgColor) {
+		if (banner == null) return rej('banner not found');
+
+		updates.bannerUrl = banner.metadata.url || `${config.drive_url}/${banner._id}`;
+
+		if (banner.metadata.properties.avgColor) {
 			updates.bannerColor = banner.metadata.properties.avgColor;
 		}
 	}
 
-	if (wallpaperId) {
-		const wallpaper = await DriveFile.findOne({
-			_id: wallpaperId
-		});
+	if (wallpaperId !== undefined) {
+		if (wallpaperId === null) {
+			updates.wallpaperUrl = null;
+			updates.wallpaperColor = null;
+		} else {
+			const wallpaper = await DriveFile.findOne({
+				_id: wallpaperId
+			});
 
-		if (wallpaper != null && wallpaper.metadata.properties.avgColor) {
-			updates.wallpaperColor = wallpaper.metadata.properties.avgColor;
+			if (wallpaper == null) return rej('wallpaper not found');
+
+			updates.wallpaperUrl = wallpaper.metadata.url || `${config.drive_url}/${wallpaper._id}`;
+
+			if (wallpaper.metadata.properties.avgColor) {
+				updates.wallpaperColor = wallpaper.metadata.properties.avgColor;
+			}
 		}
 	}
 
@@ -112,10 +139,13 @@ export default async (params: any, user: ILocalUser, app: IApp) => new Promise(a
 	res(iObj);
 
 	// Publish meUpdated event
-	event(user._id, 'meUpdated', iObj);
+	publishUserStream(user._id, 'meUpdated', iObj);
 
 	// 鍵垢を解除したとき、溜まっていたフォローリクエストがあるならすべて承認
 	if (user.isLocked && isLocked === false) {
 		acceptAllFollowRequests(user);
 	}
+
+	// フォロワーにUpdateを配信
+	publishToFollowers(user._id);
 });

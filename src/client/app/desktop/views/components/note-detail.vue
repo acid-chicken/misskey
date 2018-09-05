@@ -46,8 +46,8 @@
 				<mk-media-list :media-list="p.media" :raw="true"/>
 			</div>
 			<mk-poll v-if="p.poll" :note="p"/>
-			<mk-url-preview v-for="url in urls" :url="url" :key="url"/>
-			<a class="location" v-if="p.geo" :href="`http://maps.google.com/maps?q=${p.geo.coordinates[1]},${p.geo.coordinates[0]}`" target="_blank">%fa:map-marker-alt% %i18n:@location%</a>
+			<mk-url-preview v-for="url in urls" :url="url" :key="url" :detail="true"/>
+			<a class="location" v-if="p.geo" :href="`https://maps.google.com/maps?q=${p.geo.coordinates[1]},${p.geo.coordinates[0]}`" target="_blank">%fa:map-marker-alt% %i18n:@location%</a>
 			<div class="map" v-if="p.geo" ref="map"></div>
 			<div class="renote" v-if="p.renote">
 				<mk-note-preview :note="p.renote"/>
@@ -55,15 +55,15 @@
 		</div>
 		<footer>
 			<mk-reactions-viewer :note="p"/>
-			<button @click="reply" title="">
+			<button class="replyButton" @click="reply" title="">
 				<template v-if="p.reply">%fa:reply-all%</template>
 				<template v-else>%fa:reply%</template>
 				<p class="count" v-if="p.repliesCount > 0">{{ p.repliesCount }}</p>
 			</button>
-			<button @click="renote" title="%i18n:@renote%">
+			<button class="renoteButton" @click="renote" title="%i18n:@renote%">
 				%fa:retweet%<p class="count" v-if="p.renoteCount > 0">{{ p.renoteCount }}</p>
 			</button>
-			<button :class="{ reacted: p.myReaction != null }" @click="react" ref="reactButton" title="%i18n:@add-reaction%">
+			<button class="reactionButton" :class="{ reacted: p.myReaction != null }" @click="react" ref="reactButton" title="%i18n:@add-reaction%">
 				%fa:plus%<p class="count" v-if="p.reactions_count > 0">{{ p.reactions_count }}</p>
 			</button>
 			<button @click="menu" ref="menuButton">
@@ -79,7 +79,6 @@
 
 <script lang="ts">
 import Vue from 'vue';
-import dateStringify from '../../../common/scripts/date-stringify';
 import parse from '../../../../../mfm/parse';
 
 import MkPostFormWindow from './post-form-window.vue';
@@ -129,7 +128,7 @@ export default Vue.extend({
 				: 0;
 		},
 		title(): string {
-			return dateStringify(this.p.createdAt);
+			return new Date(this.p.createdAt).toLocaleString();
 		},
 		urls(): string[] {
 			if (this.p.text) {
@@ -373,15 +372,24 @@ root(isDark)
 				cursor pointer
 
 				&:hover
-					color isDark ? #9198af : #666
+					color isDark ? #a1a8bf : #444
+
+				&.replyButton:hover
+					color #0af
+
+				&.renoteButton:hover
+					color #8d0
+
+				&.reactionButton:hover
+					color #fa0
 
 				> .count
 					display inline
 					margin 0 0 0 8px
 					color #999
 
-				&.reacted
-					color $theme-color
+				&.reacted, &.reacted:hover
+					color #fa0
 
 	> .replies
 		> *

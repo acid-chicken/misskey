@@ -11,7 +11,7 @@
 		:init-folder="initFolder"
 		:init-file="initFile"
 		:is-naked="true"
-		:top="48"
+		:top="$store.state.uiHeaderHeight"
 		@begin-fetch="Progress.start()"
 		@fetched-mid="Progress.set(0.5)"
 		@fetched="Progress.done()"
@@ -43,7 +43,7 @@ export default Vue.extend({
 		window.addEventListener('popstate', this.onPopState);
 	},
 	mounted() {
-		document.title = 'Misskey Drive';
+		document.title = `${(this as any).os.instanceName} Drive`;
 		document.documentElement.style.background = '#fff';
 	},
 	beforeDestroy() {
@@ -63,7 +63,7 @@ export default Vue.extend({
 			(this.$refs as any).browser.openContextMenu();
 		},
 		onMoveRoot(silent) {
-			const title = 'Misskey Drive';
+			const title = `${(this as any).os.instanceName} Drive`;
 
 			if (!silent) {
 				// Rewrite URL
@@ -76,11 +76,11 @@ export default Vue.extend({
 			this.folder = null;
 		},
 		onOpenFolder(folder, silent) {
-			const title = folder.name + ' | Misskey Drive';
+			const title = `${folder.name} | ${(this as any).os.instanceName} Drive`;
 
 			if (!silent) {
 				// Rewrite URL
-				history.pushState(null, title, '/i/drive/folder/' + folder.id);
+				history.pushState(null, title, `/i/drive/folder/${folder.id}`);
 			}
 
 			document.title = title;
@@ -89,11 +89,11 @@ export default Vue.extend({
 			this.folder = folder;
 		},
 		onOpenFile(file, silent) {
-			const title = file.name + ' | Misskey Drive';
+			const title = `${file.name} | ${(this as any).os.instanceName} Drive`;
 
 			if (!silent) {
 				// Rewrite URL
-				history.pushState(null, title, '/i/drive/file/' + file.id);
+				history.pushState(null, title, `/i/drive/file/${file.id}`);
 			}
 
 			document.title = title;

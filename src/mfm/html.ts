@@ -1,13 +1,30 @@
 const { lib: emojilib } = require('emojilib');
-import { JSDOM } from 'jsdom';
+const jsdom = require('jsdom');
+const { JSDOM } = jsdom;
 import config from '../config';
 import { INote } from '../models/note';
 import { TextElement } from './parse';
+
+function intersperse<T>(sep: T, xs: T[]): T[] {
+	return [].concat(...xs.map(x => [sep, x])).slice(1);
+}
 
 const handlers: { [key: string]: (window: any, token: any, mentionedRemoteUsers: INote['mentionedRemoteUsers']) => void } = {
 	bold({ document }, { bold }) {
 		const b = document.createElement('b');
 		b.textContent = bold;
+		document.body.appendChild(b);
+	},
+
+	big({ document }, { big }) {
+		const b = document.createElement('strong');
+		b.textContent = big;
+		document.body.appendChild(b);
+	},
+
+	motion({ document }, { big }) {
+		const b = document.createElement('strong');
+		b.textContent = big;
 		document.body.appendChild(b);
 	},
 
@@ -27,8 +44,8 @@ const handlers: { [key: string]: (window: any, token: any, mentionedRemoteUsers:
 
 	hashtag({ document }, { hashtag }) {
 		const a = document.createElement('a');
-		a.href = config.url + '/tags/' + hashtag;
-		a.textContent = '#' + hashtag;
+		a.href = `${config.url}/tags/${hashtag}`;
+		a.textContent = `#${hashtag}`;
 		a.setAttribute('rel', 'tag');
 		document.body.appendChild(a);
 	},
@@ -67,12 +84,9 @@ const handlers: { [key: string]: (window: any, token: any, mentionedRemoteUsers:
 	},
 
 	text({ document }, { content }) {
-		for (const text of content.split('\n')) {
-			const node = document.createTextNode(text);
-			document.body.appendChild(node);
-
-			const br = document.createElement('br');
-			document.body.appendChild(br);
+		const nodes = (content as string).split('\n').map(x => document.createTextNode(x));
+		for (const x of intersperse(document.createElement('br'), nodes)) {
+			document.body.appendChild(x);
 		}
 	},
 

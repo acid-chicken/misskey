@@ -7,6 +7,7 @@ import { URL } from 'url';
 import * as yaml from 'js-yaml';
 import { Source, Mixin } from './types';
 import isUrl = require('is-url');
+const pkg = require('../../package.json');
 
 /**
  * Path of configuration directory
@@ -43,10 +44,16 @@ export default function load() {
 	mixin.stats_url = `${mixin.scheme}://${mixin.host}/stats`;
 	mixin.status_url = `${mixin.scheme}://${mixin.host}/status`;
 	mixin.drive_url = `${mixin.scheme}://${mixin.host}/files`;
+	mixin.user_agent = `Misskey/${pkg.version} (${config.url})`;
+
+	if (config.localDriveCapacityMb == null) config.localDriveCapacityMb = 256;
+	if (config.remoteDriveCapacityMb == null) config.remoteDriveCapacityMb = 8;
+
+	if (config.name == null) config.name = 'Misskey';
 
 	return Object.assign(config, mixin);
 }
 
 function normalizeUrl(url: string) {
-	return url[url.length - 1] === '/' ? url.substr(0, url.length - 1) : url;
+	return url.endsWith('/') ? url.substr(0, url.length - 1) : url;
 }

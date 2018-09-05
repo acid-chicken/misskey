@@ -1,6 +1,6 @@
 <template>
-<div class="profile">
-	<div class="friend-form" v-if="$store.getters.isSignedIn && $store.state.i.id != user.id">
+<div class="profile" v-if="$store.getters.isSignedIn">
+	<div class="friend-form" v-if="$store.state.i.id != user.id">
 		<mk-follow-button :user="user" size="big"/>
 		<p class="followed" v-if="user.isFollowed">%i18n:@follows-you%</p>
 		<p class="stalk" v-if="user.isFollowing">
@@ -9,11 +9,11 @@
 		</p>
 	</div>
 	<div class="action-form">
-		<button class="mute ui" @click="user.isMuted ? unmute() : mute()">
+		<button class="mute ui" @click="user.isMuted ? unmute() : mute()" v-if="$store.state.i.id != user.id">
 			<span v-if="user.isMuted">%fa:eye% %i18n:@unmute%</span>
 			<span v-if="!user.isMuted">%fa:eye-slash% %i18n:@mute%</span>
 		</button>
-		<button class="mute ui" @click="list">%fa:list% リストに追加</button>
+		<button class="mute ui" @click="list">%fa:list% %i18n:@push-to-a-list%</button>
 	</div>
 </div>
 </template>
@@ -76,7 +76,7 @@ export default Vue.extend({
 				});
 				(this as any).apis.dialog({
 					title: 'Done!',
-					text: `${this.user.name}を${list.title}に追加しました。`
+					text: '%i18n:@list-pushed%'.replace('{user}', this.user.name).replace('{list}', list.title)
 				});
 			});
 		}

@@ -4,57 +4,92 @@ import Mute from '../../../../models/mute';
 import { pack } from '../../../../models/note';
 import UserList from '../../../../models/user-list';
 import { ILocalUser } from '../../../../models/user';
+import getParams from '../../get-params';
 
-/**
- * Get timeline of a user list
- */
-export default async (params: any, user: ILocalUser) => {
-	// Get 'limit' parameter
-	const [limit = 10, limitErr] = $.num.optional.range(1, 100).get(params.limit);
-	if (limitErr) throw 'invalid limit param';
+export const meta = {
+	desc: {
+		'ja-JP': '指定したユーザーリストのタイムラインを取得します。',
+		'en-US': 'Get timeline of a user list.'
+	},
 
-	// Get 'sinceId' parameter
-	const [sinceId, sinceIdErr] = $.type(ID).optional.get(params.sinceId);
-	if (sinceIdErr) throw 'invalid sinceId param';
+	requireCredential: true,
 
-	// Get 'untilId' parameter
-	const [untilId, untilIdErr] = $.type(ID).optional.get(params.untilId);
-	if (untilIdErr) throw 'invalid untilId param';
+	params: {
+		listId: $.type(ID).note({
+			desc: {
+				'ja-JP': 'リストのID'
+			}
+		}),
 
-	// Get 'sinceDate' parameter
-	const [sinceDate, sinceDateErr] = $.num.optional.get(params.sinceDate);
-	if (sinceDateErr) throw 'invalid sinceDate param';
+		limit: $.num.optional.range(1, 100).note({
+			default: 10,
+			desc: {
+				'ja-JP': '最大数'
+			}
+		}),
 
-	// Get 'untilDate' parameter
-	const [untilDate, untilDateErr] = $.num.optional.get(params.untilDate);
-	if (untilDateErr) throw 'invalid untilDate param';
+		sinceId: $.type(ID).optional.note({
+			desc: {
+				'ja-JP': '指定すると、この投稿を基点としてより新しい投稿を取得します'
+			}
+		}),
 
-	// Check if only one of sinceId, untilId, sinceDate, untilDate specified
-	if ([sinceId, untilId, sinceDate, untilDate].filter(x => x != null).length > 1) {
-		throw 'only one of sinceId, untilId, sinceDate, untilDate can be specified';
+		untilId: $.type(ID).optional.note({
+			desc: {
+				'ja-JP': '指定すると、この投稿を基点としてより古い投稿を取得します'
+			}
+		}),
+
+		sinceDate: $.num.optional.note({
+			desc: {
+				'ja-JP': '指定した時間を基点としてより新しい投稿を取得します。数値は、1970年1月1日 00:00:00 UTC から指定した日時までの経過時間をミリ秒単位で表します。'
+			}
+		}),
+
+		untilDate: $.num.optional.note({
+			desc: {
+				'ja-JP': '指定した時間を基点としてより古い投稿を取得します。数値は、1970年1月1日 00:00:00 UTC から指定した日時までの経過時間をミリ秒単位で表します。'
+			}
+		}),
+
+		includeMyRenotes: $.bool.optional.note({
+			default: true,
+			desc: {
+				'ja-JP': '自分の行ったRenoteを含めるかどうか'
+			}
+		}),
+
+		includeRenotedMyNotes: $.bool.optional.note({
+			default: true,
+			desc: {
+				'ja-JP': 'Renoteされた自分の投稿を含めるかどうか'
+			}
+		}),
+
+		includeLocalRenotes: $.bool.optional.note({
+			default: true,
+			desc: {
+				'ja-JP': 'Renoteされたローカルの投稿を含めるかどうか'
+			}
+		}),
+
+		mediaOnly: $.bool.optional.note({
+			desc: {
+				'ja-JP': 'true にすると、メディアが添付された投稿だけ取得します'
+			}
+		}),
 	}
+};
 
-	// Get 'includeMyRenotes' parameter
-	const [includeMyRenotes = true, includeMyRenotesErr] = $.bool.optional.get(params.includeMyRenotes);
-	if (includeMyRenotesErr) throw 'invalid includeMyRenotes param';
-
-	// Get 'includeRenotedMyNotes' parameter
-	const [includeRenotedMyNotes = true, includeRenotedMyNotesErr] = $.bool.optional.get(params.includeRenotedMyNotes);
-	if (includeRenotedMyNotesErr) throw 'invalid includeRenotedMyNotes param';
-
-	// Get 'mediaOnly' parameter
-	const [mediaOnly, mediaOnlyErr] = $.bool.optional.get(params.mediaOnly);
-	if (mediaOnlyErr) throw 'invalid mediaOnly param';
-
-	// Get 'listId' parameter
-	const [listId, listIdErr] = $.type(ID).get(params.listId);
-	if (listIdErr) throw 'invalid listId param';
+export default async (params: any, user: ILocalUser) => {
+	const [ps, psErr] = getParams(meta, params);
+	if (psErr) throw psErr;
 
 	const [list, mutedUserIds] = await Promise.all([
 		// リストを取得
 		// Fetch the list
 		UserList.findOne({
-			_id: listId,
+			_id: ps.listId,
 			userId: user._id
 		}),
 
@@ -116,7 +151,7 @@ export default async (params: any, user: ILocalUser) => {
 	// つまり、「『自分の投稿かつRenote』ではない」を「『自分の投稿ではない』または『Renoteではない』」と表現します。
 	// for details: https://en.wikipedia.org/wiki/De_Morgan%27s_laws
 
-	if (includeMyRenotes === false) {
+	if (ps.includeMyRenotes === false) {
 		query.$and.push({
 			$or: [{
 				userId: { $ne: user._id }
@@ -132,7 +167,7 @@ export default async (params: any, user: ILocalUser) => {
 		});
 	}
 
-	if (includeRenotedMyNotes === false) {
+	if (ps.includeRenotedMyNotes === false) {
 		query.$and.push({
 			$or: [{
 				'_renote.userId': { $ne: user._id }
@@ -148,29 +183,45 @@ export default async (params: any, user: ILocalUser) => {
 		});
 	}
 
-	if (mediaOnly) {
+	if (ps.includeLocalRenotes === false) {
+		query.$and.push({
+			$or: [{
+				'_renote.user.host': { $ne: null }
+			}, {
+				renoteId: null
+			}, {
+				text: { $ne: null }
+			}, {
+				mediaIds: { $ne: [] }
+			}, {
+				poll: { $ne: null }
+			}]
+		});
+	}
+
+	if (ps.mediaOnly) {
 		query.$and.push({
 			mediaIds: { $exists: true, $ne: [] }
 		});
 	}
 
-	if (sinceId) {
+	if (ps.sinceId) {
 		sort._id = 1;
 		query._id = {
-			$gt: sinceId
+			$gt: ps.sinceId
 		};
-	} else if (untilId) {
+	} else if (ps.untilId) {
 		query._id = {
-			$lt: untilId
+			$lt: ps.untilId
 		};
-	} else if (sinceDate) {
+	} else if (ps.sinceDate) {
 		sort._id = 1;
 		query.createdAt = {
-			$gt: new Date(sinceDate)
+			$gt: new Date(ps.sinceDate)
 		};
-	} else if (untilDate) {
+	} else if (ps.untilDate) {
 		query.createdAt = {
-			$lt: new Date(untilDate)
+			$lt: new Date(ps.untilDate)
 		};
 	}
 	//#endregion
@@ -178,7 +229,7 @@ export default async (params: any, user: ILocalUser) => {
 	// Issue query
 	const timeline = await Note
 		.find(query, {
-			limit: limit,
+			limit: ps.limit,
 			sort: sort
 		});
 

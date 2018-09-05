@@ -3,7 +3,7 @@ import * as bcrypt from 'bcryptjs';
 import * as speakeasy from 'speakeasy';
 import User, { ILocalUser } from '../../../models/user';
 import Signin, { pack } from '../../../models/signin';
-import event from '../../../stream';
+import { publishUserStream } from '../../../stream';
 import signin from '../common/signin';
 import config from '../../../config';
 
@@ -11,9 +11,11 @@ export default async (ctx: Koa.Context) => {
 	ctx.set('Access-Control-Allow-Origin', config.url);
 	ctx.set('Access-Control-Allow-Credentials', 'true');
 
-	const username = ctx.request.body['username'];
-	const password = ctx.request.body['password'];
-	const token = ctx.request.body['token'];
+	const body = ctx.request.body as any;
+	// See: https://github.com/syuilo/misskey/issues/2384
+	const username = body['username'] || body['x'];
+	const password = body['password'] || body['y'];
+	const token = body['token'];
 
 	if (typeof username != 'string') {
 		ctx.status = 400;
@@ -35,11 +37,11 @@ export default async (ctx: Koa.Context) => {
 		usernameLower: username.toLowerCase(),
 		host: null
 	}, {
-		fields: {
-			data: false,
-			profile: false
-		}
-	}) as ILocalUser;
+			fields: {
+				data: false,
+				profile: false
+			}
+		}) as ILocalUser;
 
 	if (user === null) {
 		ctx.throw(404, {
@@ -62,7 +64,7 @@ export default async (ctx: Koa.Context) => {
 			if (verified) {
 				signin(ctx, user);
 			} else {
-				ctx.throw(400, {
+				ctx.throw(403, {
 					error: 'invalid token'
 				});
 			}
@@ -70,7 +72,7 @@ export default async (ctx: Koa.Context) => {
 			signin(ctx, user);
 		}
 	} else {
-		ctx.throw(400, {
+		ctx.throw(403, {
 			error: 'incorrect password'
 		});
 	}
@@ -85,5 +87,5 @@ export default async (ctx: Koa.Context) => {
 	});
 
 	// Publish signin event
-	event(user._id, 'signin', await pack(record));
+	publishUserStream(user._id, 'signin', await pack(record));
 };

@@ -1,24 +1,28 @@
 <template>
-<div class="root">
-	<header><b>{{ blackUser.name }}</b>(黒) vs <b>{{ whiteUser.name }}</b>(白)</header>
+<div class="xqnhankfuuilcwvhgsopeqncafzsquya">
+	<button class="go-index" v-if="selfNav" @click="goIndex">%fa:arrow-left%</button>
+	<header><b><router-link :to="blackUser | userPage">{{ blackUser | userName }}</router-link></b>(%i18n:common.reversi.black%) vs <b><router-link :to="whiteUser | userPage">{{ whiteUser | userName }}</router-link></b>(%i18n:common.reversi.white%)</header>
 
-	<div style="overflow: hidden">
-		<p class="turn" v-if="!iAmPlayer && !game.isEnded">{{ '%i18n:common.reversi.turn-of%'.replace('{}', turnUser.name) }}<mk-ellipsis/></p>
-		<p class="turn" v-if="logPos != logs.length">{{ '%i18n:common.reversi.past-turn-of%'.replace('{}', turnUser.name) }}</p>
+	<div style="overflow: hidden; line-height: 28px;">
+		<p class="turn" v-if="!iAmPlayer && !game.isEnded">{{ '%i18n:common.reversi.turn-of%'.replace('{}', $options.filters.userName(turnUser)) }}<mk-ellipsis/></p>
+		<p class="turn" v-if="logPos != logs.length">{{ '%i18n:common.reversi.past-turn-of%'.replace('{}', $options.filters.userName(turnUser)) }}</p>
 		<p class="turn1" v-if="iAmPlayer && !game.isEnded && !isMyTurn">%i18n:common.reversi.opponent-turn%<mk-ellipsis/></p>
 		<p class="turn2" v-if="iAmPlayer && !game.isEnded && isMyTurn" v-animate-css="{ classes: 'tada', iteration: 'infinite' }">%i18n:common.reversi.my-turn%</p>
 		<p class="result" v-if="game.isEnded && logPos == logs.length">
-			<template v-if="game.winner"><b>{{ game.winner.name }}</b>の勝ち{{ game.settings.isLlotheo ? ' (ロセオ)' : '' }}</template>
+			<template v-if="game.winner">
+				<span>{{ '%i18n:common.reversi.won%'.replace('{}', $options.filters.userName(game.winner)) }}</span>
+				<span v-if="game.surrendered != null"> (%i18n:@surrendered%)</span>
+			</template>
 			<template v-else>%i18n:common.reversi.drawn%</template>
 		</p>
 	</div>
 
 	<div class="board">
-		<div class="labels-x" v-if="this.$store.state.settings.reversiBoardLabels">
+		<div class="labels-x" v-if="this.$store.state.settings.games.reversi.showBoardLabels">
 			<span v-for="i in game.settings.map[0].length">{{ String.fromCharCode(64 + i) }}</span>
 		</div>
 		<div class="flex">
-			<div class="labels-y" v-if="this.$store.state.settings.reversiBoardLabels">
+			<div class="labels-y" v-if="this.$store.state.settings.games.reversi.showBoardLabels">
 				<div v-for="i in game.settings.map.length">{{ i }}</div>
 			</div>
 			<div class="cells" :style="cellsStyle">
@@ -26,20 +30,24 @@
 						:class="{ empty: stone == null, none: o.map[i] == 'null', isEnded: game.isEnded, myTurn: !game.isEnded && isMyTurn, can: turnUser ? o.canPut(turnUser.id == blackUser.id, i) : null, prev: o.prevPos == i }"
 						@click="set(i)"
 						:title="`${String.fromCharCode(65 + o.transformPosToXy(i)[0])}${o.transformPosToXy(i)[1] + 1}`">
-					<img v-if="stone === true" :src="`${blackUser.avatarUrl}?thumbnail&size=128`" alt="">
-					<img v-if="stone === false" :src="`${whiteUser.avatarUrl}?thumbnail&size=128`" alt="">
+					<img v-if="stone === true" :src="blackUser.avatarUrl" alt="black" :class="{ contrast: $store.state.settings.games.reversi.useContrastStones }">
+					<img v-if="stone === false" :src="whiteUser.avatarUrl" alt="white" :class="{ contrast: $store.state.settings.games.reversi.useContrastStones }">
 				</div>
 			</div>
-			<div class="labels-y" v-if="this.$store.state.settings.reversiBoardLabels">
+			<div class="labels-y" v-if="this.$store.state.settings.games.reversi.showBoardLabels">
 				<div v-for="i in game.settings.map.length">{{ i }}</div>
 			</div>
 		</div>
-		<div class="labels-x" v-if="this.$store.state.settings.reversiBoardLabels">
+		<div class="labels-x" v-if="this.$store.state.settings.games.reversi.showBoardLabels">
 			<span v-for="i in game.settings.map[0].length">{{ String.fromCharCode(64 + i) }}</span>
 		</div>
 	</div>
 
-	<p class="status"><b>{{ logPos }}ターン目</b> 黒:{{ o.blackCount }} 白:{{ o.whiteCount }} 合計:{{ o.blackCount + o.whiteCount }}</p>
+	<p class="status"><b>{{ '%i18n:common.reversi.this-turn%'.split('{}')[0] }}{{ logPos }}{{ '%i18n:common.reversi.this-turn%'.split('{}')[1] }}</b> %i18n:common.reversi.black%:{{ o.blackCount }} %i18n:common.reversi.white%:{{ o.whiteCount }} %i18n:common.reversi.total%:{{ o.blackCount + o.whiteCount }}</p>
+
+	<div class="actions" v-if="!game.isEnded && iAmPlayer">
+		<form-button @click="surrender">%i18n:@surrender%</form-button>
+	</div>
 
 	<div class="player" v-if="game.isEnded">
 		<el-button-group>
@@ -52,6 +60,12 @@
 			<el-button type="primary" @click="logPos = logs.length" :disabled="logPos == logs.length">%fa:angle-double-right%</el-button>
 		</el-button-group>
 	</div>
+
+	<div class="info">
+		<p v-if="game.settings.isLlotheo">%i18n:@is-llotheo%</p>
+		<p v-if="game.settings.loopedBoard">%i18n:@looped-map%</p>
+		<p v-if="game.settings.canPutEverywhere">%i18n:@can-put-everywhere%</p>
+	</div>
 </div>
 </template>
 
@@ -62,7 +76,20 @@ import Reversi, { Color } from '../../../../../../../games/reversi/core';
 import { url } from '../../../../../config';
 
 export default Vue.extend({
-	props: ['initGame', 'connection'],
+	props: {
+		initGame: {
+			type: Object,
+			require: true
+		},
+		connection: {
+			type: Object,
+			require: true
+		},
+		selfNav: {
+			type: Boolean,
+			require: true
+		}
+	},
 
 	data() {
 		return {
@@ -79,22 +106,27 @@ export default Vue.extend({
 			if (!this.$store.getters.isSignedIn) return false;
 			return this.game.user1Id == this.$store.state.i.id || this.game.user2Id == this.$store.state.i.id;
 		},
+
 		myColor(): Color {
 			if (!this.iAmPlayer) return null;
 			if (this.game.user1Id == this.$store.state.i.id && this.game.black == 1) return true;
 			if (this.game.user2Id == this.$store.state.i.id && this.game.black == 2) return true;
 			return false;
 		},
+
 		opColor(): Color {
 			if (!this.iAmPlayer) return null;
 			return this.myColor === true ? false : true;
 		},
+
 		blackUser(): any {
 			return this.game.black == 1 ? this.game.user1 : this.game.user2;
 		},
+
 		whiteUser(): any {
 			return this.game.black == 1 ? this.game.user2 : this.game.user1;
 		},
+
 		turnUser(): any {
 			if (this.o.turn === true) {
 				return this.game.black == 1 ? this.game.user1 : this.game.user2;
@@ -104,14 +136,17 @@ export default Vue.extend({
 				return null;
 			}
 		},
+
 		isMyTurn(): boolean {
-			if (this.turnUser == null) return null;
+			if (!this.iAmPlayer) return false;
+			if (this.turnUser == null) return false;
 			return this.turnUser.id == this.$store.state.i.id;
 		},
+
 		cellsStyle(): any {
 			return {
-				'grid-template-rows': `repeat(${ this.game.settings.map.length }, 1fr)`,
-				'grid-template-columns': `repeat(${ this.game.settings.map[0].length }, 1fr)`
+				'grid-template-rows': `repeat(${this.game.settings.map.length}, 1fr)`,
+				'grid-template-columns': `repeat(${this.game.settings.map[0].length}, 1fr)`
 			};
 		}
 	},
@@ -124,11 +159,9 @@ export default Vue.extend({
 				canPutEverywhere: this.game.settings.canPutEverywhere,
 				loopedBoard: this.game.settings.loopedBoard
 			});
-			this.logs.forEach((log, i) => {
-				if (i < v) {
-					this.o.put(log.color, log.pos);
-				}
-			});
+			for (const log of this.logs.slice(0, v)) {
+				this.o.put(log.color, log.pos);
+			}
 			this.$forceUpdate();
 		}
 	},
@@ -164,11 +197,13 @@ export default Vue.extend({
 	mounted() {
 		this.connection.on('set', this.onSet);
 		this.connection.on('rescue', this.onRescue);
+		this.connection.on('ended', this.onEnded);
 	},
 
 	beforeDestroy() {
 		this.connection.off('set', this.onSet);
 		this.connection.off('rescue', this.onRescue);
+		this.connection.off('ended', this.onEnded);
 
 		clearInterval(this.pollingClock);
 	},
@@ -214,6 +249,10 @@ export default Vue.extend({
 			}
 		},
 
+		onEnded(x) {
+			this.game = x.game;
+		},
+
 		checkEnd() {
 			this.game.isEnded = this.o.isEnded;
 			if (this.game.isEnded) {
@@ -249,6 +288,16 @@ export default Vue.extend({
 
 			this.checkEnd();
 			this.$forceUpdate();
+		},
+
+		surrender() {
+			(this as any).api('games/reversi/games/surrender', {
+				gameId: this.game.id
+			});
+		},
+
+		goIndex() {
+			this.$emit('go-index');
 		}
 	}
 });
@@ -257,12 +306,23 @@ export default Vue.extend({
 <style lang="stylus" scoped>
 @import '~const.styl'
 
-.root
+root(isDark)
 	text-align center
+
+	> .go-index
+		position absolute
+		top 0
+		left 0
+		z-index 1
+		width 42px
+		height 42px
 
 	> header
 		padding 8px
-		border-bottom dashed 1px #c4cdd4
+		border-bottom dashed 1px isDark ? #4c5761 : #c4cdd4
+
+		a
+			color inherit
 
 	> .board
 		width calc(100% - 16px)
@@ -326,16 +386,16 @@ export default Vue.extend({
 						user-select none
 
 					&.empty
-						border solid 2px #eee
+						border solid 2px isDark ? #51595f : #eee
 
 					&.empty.can
-						background #eee
+						background isDark ? #51595f : #eee
 
 					&.empty.myTurn
-						border-color #ddd
+						border-color isDark ? #6a767f : #ddd
 
 						&.can
-							background #eee
+							background isDark ? #51595f : #eee
 							cursor pointer
 
 							&:hover
@@ -349,7 +409,7 @@ export default Vue.extend({
 						box-shadow 0 0 0 4px rgba($theme-color, 0.7)
 
 					&.isEnded
-						border-color #ddd
+						border-color isDark ? #6a767f : #ddd
 
 					&.none
 						border-color transparent !important
@@ -358,6 +418,13 @@ export default Vue.extend({
 						display block
 						width 100%
 						height 100%
+
+						&.contrast
+							&[alt="black"]
+								filter brightness(.5)
+
+							&[alt="white"]
+								filter brightness(2)
 
 	> .graph
 		display grid
@@ -380,6 +447,9 @@ export default Vue.extend({
 		margin 0
 		padding 16px 0
 
+	> .actions
+		padding-bottom 16px
+
 	> .player
 		padding-bottom 32px
 
@@ -387,4 +457,11 @@ export default Vue.extend({
 			display inline-block
 			margin 0 8px
 			min-width 70px
+
+.xqnhankfuuilcwvhgsopeqncafzsquya[data-darkmode]
+	root(true)
+
+.xqnhankfuuilcwvhgsopeqncafzsquya:not([data-darkmode])
+	root(false)
+
 </style>

@@ -3,12 +3,25 @@ import { apiUrl } from '../../config';
 import CropWindow from '../views/components/crop-window.vue';
 import ProgressDialog from '../views/components/progress-dialog.vue';
 
-export default (os: OS) => (cb, file = null) => {
-	const fileSelected = file => {
+export default (os: OS) => {
+
+	const cropImage = file => new Promise((resolve, reject) => {
+
+		const regex = RegExp('\.(jpg|jpeg|png|gif|webp|bmp|tiff)$');
+		if (!regex.test(file.name) ) {
+			os.apis.dialog({
+				title: '%fa:info-circle% %i18n:desktop.invalid-filetype%',
+				text: null,
+				actions: [{
+					text: '%i18n:common.got-it%'
+				}]
+			});
+			return reject('invalid-filetype');
+		}
 
 		const w = os.new(CropWindow, {
 			image: file,
-			title: 'アバターとして表示する部分を選択',
+			title: '%i18n:desktop.avatar-crop-title%',
 			aspectRatio: 1 / 1
 		});
 
@@ -18,30 +31,32 @@ export default (os: OS) => (cb, file = null) => {
 			data.append('file', blob, file.name + '.cropped.png');
 
 			os.api('drive/folders/find', {
-				name: 'アイコン'
-			}).then(iconFolder => {
-				if (iconFolder.length === 0) {
+				name: '%i18n:desktop.avatar%'
+			}).then(avatarFolder => {
+				if (avatarFolder.length === 0) {
 					os.api('drive/folders/create', {
-						name: 'アイコン'
+						name: '%i18n:desktop.avatar%'
 					}).then(iconFolder => {
-						upload(data, iconFolder);
+						resolve(upload(data, iconFolder));
 					});
 				} else {
-					upload(data, iconFolder[0]);
+					resolve(upload(data, avatarFolder[0]));
 				}
 			});
 		});
 
 		w.$once('skipped', () => {
-			set(file);
+			resolve(file);
 		});
 
-		document.body.appendChild(w.$el);
-	};
+		w.$once('cancelled', reject);
 
-	const upload = (data, folder) => {
+		document.body.appendChild(w.$el);
+	});
+
+	const upload = (data, folder) => new Promise((resolve, reject) => {
 		const dialog = os.new(ProgressDialog, {
-			title: '新しいアバターをアップロードしています'
+			title: '%i18n:desktop.uploading-avatar%'
 		});
 		document.body.appendChild(dialog.$el);
 
@@ -52,18 +67,19 @@ export default (os: OS) => (cb, file = null) => {
 		xhr.onload = e => {
 			const file = JSON.parse((e.target as any).response);
 			(dialog as any).close();
-			set(file);
+			resolve(file);
 		};
+		xhr.onerror = reject;
 
 		xhr.upload.onprogress = e => {
 			if (e.lengthComputable) (dialog as any).update(e.loaded, e.total);
 		};
 
 		xhr.send(data);
-	};
+	});
 
-	const set = file => {
-		os.api('i/update', {
+	const setAvatar = file => {
+		return os.api('i/update', {
 			avatarId: file.id
 		}).then(i => {
 			os.store.commit('updateIKeyValue', {
@@ -76,25 +92,28 @@ export default (os: OS) => (cb, file = null) => {
 			});
 
 			os.apis.dialog({
-				title: '%fa:info-circle%アバターを更新しました',
-				text: '新しいアバターが反映されるまで時間がかかる場合があります。',
+				title: '%fa:info-circle% %i18n:desktop.avatar-updated%',
+				text: null,
 				actions: [{
-					text: 'わかった'
+					text: '%i18n:common.got-it%'
 				}]
 			});
 
-			if (cb) cb(i);
+			return i;
 		});
 	};
 
-	if (file) {
-		fileSelected(file);
-	} else {
-		os.apis.chooseDriveFile({
-			multiple: false,
-			title: '%fa:image%アバターにする画像を選択'
-		}).then(file => {
-			fileSelected(file);
-		});
-	}
+	return (file = null) => {
+		const selectedFile = file
+			? Promise.resolve(file)
+			: os.apis.chooseDriveFile({
+				multiple: false,
+				title: '%fa:image% %i18n:desktop.choose-avatar%'
+			});
+
+		return selectedFile
+			.then(cropImage)
+			.then(setAvatar)
+			.catch(err => err && console.warn(err));
+	};
 };

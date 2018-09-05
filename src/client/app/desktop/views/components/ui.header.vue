@@ -1,20 +1,24 @@
 <template>
 <div class="header">
+	<p class="warn" v-if="env != 'production'">%i18n:common.do-not-use-in-production%</p>
 	<mk-special-message/>
 	<div class="main" ref="main">
 		<div class="backdrop"></div>
 		<div class="main">
-			<p ref="welcomeback" v-if="$store.getters.isSignedIn">%i18n:@welcome-back%<b>{{ $store.state.i | userName }}</b>さん</p>
+			<p ref="welcomeback" v-if="$store.getters.isSignedIn">%i18n:@welcome-back%<b>{{ $store.state.i | userName }}</b>%i18n:@adjective%</p>
 			<div class="container" ref="mainContainer">
 				<div class="left">
 					<x-nav/>
+				</div>
+				<div class="center">
+					<div class="icon" @click="goToTop"></div>
 				</div>
 				<div class="right">
 					<x-search/>
 					<x-account v-if="$store.getters.isSignedIn"/>
 					<x-notifications v-if="$store.getters.isSignedIn"/>
 					<x-post v-if="$store.getters.isSignedIn"/>
-					<x-clock/>
+					<x-clock v-if="$store.state.settings.showClockOnHeader"/>
 				</div>
 			</div>
 		</div>
@@ -25,6 +29,7 @@
 <script lang="ts">
 import Vue from 'vue';
 import * as anime from 'animejs';
+import { env } from '../../../config';
 
 import XNav from './ui.header.nav.vue';
 import XSearch from './ui.header.search.vue';
@@ -40,8 +45,15 @@ export default Vue.extend({
 		XAccount,
 		XNotifications,
 		XPost,
-		XClock,
+		XClock
 	},
+
+	data() {
+		return {
+			env: env
+		};
+	},
+
 	mounted() {
 		this.$store.commit('setUiHeaderHeight', 48);
 
@@ -93,7 +105,16 @@ export default Vue.extend({
 				}, 2500);
 			}
 		}
-	}
+	},
+
+	methods: {
+		goToTop() {
+			window.scrollTo({
+				top: 0,
+				behavior: 'smooth'
+			});
+		}
+	},
 });
 </script>
 
@@ -105,6 +126,15 @@ root(isDark)
 	z-index 1000
 	width 100%
 	box-shadow 0 1px 1px rgba(#000, 0.075)
+
+	> .warn
+		display block
+		margin 0
+		padding 4px
+		text-align center
+		font-size 12px
+		background #f00
+		color #fff
 
 	> .main
 		height 48px
@@ -142,27 +172,31 @@ root(isDark)
 				max-width 1300px
 				margin 0 auto
 
-				&:before
-					content ""
+				> *
 					position absolute
-					top 0
-					left 0
-					display block
-					width 100%
 					height 48px
-					background-image isDark ? url('/assets/desktop/header-icon.dark.svg') : url('/assets/desktop/header-icon.light.svg')
-					background-size 24px
-					background-position center
-					background-repeat no-repeat
-					opacity 0.3
 
-				> .left
-					margin 0 auto 0 0
-					height 48px
+				> .center
+					right 0
+
+					> .icon
+						margin auto
+						display block
+						width 48px
+						height 48px
+						background-image isDark ? url('/assets/desktop/header-icon.dark.svg') : url('/assets/desktop/header-icon.light.svg')
+						background-size 24px
+						background-position center
+						background-repeat no-repeat
+						opacity 0.3
+						cursor pointer
+
+				> .left,
+				> .center
+					left 0
 
 				> .right
-					margin 0 0 0 auto
-					height 48px
+					right 0
 
 					> *
 						display inline-block

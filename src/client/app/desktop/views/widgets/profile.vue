@@ -4,12 +4,13 @@
 	:data-melt="props.design == 2"
 >
 	<div class="banner"
-		:style="$store.state.i.bannerUrl ? `background-image: url(${$store.state.i.bannerUrl}?thumbnail&size=256)` : ''"
+		:style="$store.state.i.bannerUrl ? `background-image: url(${$store.state.i.bannerUrl})` : ''"
 		title="%i18n:@update-banner%"
-		@click="os.apis.updateBanner"
+		@click="() => os.apis.updateBanner()"
 	></div>
 	<mk-avatar class="avatar" :user="$store.state.i"
-		@click="os.apis.updateAvatar"
+		:disable-link="true"
+		@click="() => os.apis.updateAvatar()"
 		title="%i18n:@update-avatar%"
 	/>
 	<router-link class="name" :to="$store.state.i | userPage">{{ $store.state.i | userName }}</router-link>

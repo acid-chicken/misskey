@@ -1,5 +1,5 @@
 import User, { isLocalUser, isRemoteUser, pack as packUser, IUser } from '../../../models/user';
-import event from '../../../stream';
+import { publishUserStream } from '../../../stream';
 import notify from '../../../notify';
 import pack from '../../../remote/activitypub/renderer';
 import renderFollow from '../../../remote/activitypub/renderer/follow';
@@ -7,8 +7,6 @@ import { deliver } from '../../../queue';
 import FollowRequest from '../../../models/follow-request';
 
 export default async function(follower: IUser, followee: IUser) {
-	if (!followee.isLocked) throw '対象のアカウントは鍵アカウントではありません';
-
 	await FollowRequest.insert({
 		createdAt: new Date(),
 		followerId: follower._id,
@@ -17,11 +15,13 @@ export default async function(follower: IUser, followee: IUser) {
 		// 非正規化
 		_follower: {
 			host: follower.host,
-			inbox: isRemoteUser(follower) ? follower.inbox : undefined
+			inbox: isRemoteUser(follower) ? follower.inbox : undefined,
+			sharedInbox: isRemoteUser(follower) ? follower.sharedInbox : undefined
 		},
 		_followee: {
 			host: followee.host,
-			inbox: isRemoteUser(followee) ? followee.inbox : undefined
+			inbox: isRemoteUser(followee) ? followee.inbox : undefined,
+			sharedInbox: isRemoteUser(followee) ? followee.sharedInbox : undefined
 		}
 	});
 
@@ -33,11 +33,11 @@ export default async function(follower: IUser, followee: IUser) {
 
 	// Publish receiveRequest event
 	if (isLocalUser(followee)) {
-		packUser(follower, followee).then(packed => event(followee._id, 'receiveFollowRequest', packed));
+		packUser(follower, followee).then(packed => publishUserStream(followee._id, 'receiveFollowRequest', packed));
 
 		packUser(followee, followee, {
 			detail: true
-		}).then(packed => event(followee._id, 'meUpdated', packed));
+		}).then(packed => publishUserStream(followee._id, 'meUpdated', packed));
 
 		// 通知を作成
 		notify(followee._id, follower._id, 'receiveFollowRequest');

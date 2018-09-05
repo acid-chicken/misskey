@@ -23,7 +23,7 @@ export default Vue.extend({
 		};
 	},
 	mounted() {
-		document.title = 'Misskey | %i18n:@title%';
+		document.title = '%i18n:@title%';
 
 		Progress.start();
 
@@ -43,7 +43,7 @@ export default Vue.extend({
 					title
 				});
 
-				this.$router.push('/i/lists/' + list.id);
+				this.$router.push(`/i/lists/${list.id}`);
 			});
 		}
 	}

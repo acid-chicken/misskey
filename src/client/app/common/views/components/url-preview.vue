@@ -1,9 +1,14 @@
 <template>
-<iframe v-if="youtubeId" type="text/html" height="250"
-	:src="`https://www.youtube.com/embed/${youtubeId}?origin=${misskeyUrl}`"
-	frameborder="0"/>
+<div v-if="player.url" class="player" :style="`padding: ${(player.height || 0) / (player.width || 1) * 100}% 0 0`">
+	<iframe :src="player.url" :width="player.width || '100%'" :heigth="player.height || 250" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen />
+</div>
+<div v-else-if="tweetUrl && detail" class="twitter">
+	<blockquote ref="tweet" class="twitter-tweet" :data-theme="$store.state.device.darkmode ? 'dark' : null">
+		<a :href="url"></a>
+	</blockquote>
+</div>
 <div v-else class="mk-url-preview">
-	<a :href="url" target="_blank" :title="url" v-if="!fetching">
+	<a :class="{ mini }" :href="url" target="_blank" :title="url" v-if="!fetching">
 		<div class="thumbnail" v-if="thumbnail" :style="`background-image: url(${thumbnail})`"></div>
 		<article>
 			<header>
@@ -23,8 +28,105 @@
 import Vue from 'vue';
 import { url as misskeyUrl } from '../../../config';
 
+// THIS IS THE WHITELIST FOR THE EMBED PLAYER
+const whiteList = [
+	'afreecatv.com',
+	'aparat.com',
+	'applemusic.com',
+	'amazon.com',
+	'awa.fm',
+	'bandcamp.com',
+	'bbc.co.uk',
+	'beatport.com',
+	'bilibili.com',
+	'boomstream.com',
+	'breakers.tv',
+	'cam4.com',
+	'cavelis.net',
+	'chaturbate.com',
+	'cnn.com',
+	'cybergame.tv',
+	'dailymotion.com',
+	'deezer.com',
+	'djlive.pl',
+	'e-onkyo.com',
+	'eventials.com',
+	'facebook.com',
+	'fc2.com',
+	'gameplank.tv',
+	'goodgame.ru',
+	'google.com',
+	'hardtunes.com',
+	'instagram.com',
+	'johnnylooch.com',
+	'kexp.org',
+	'lahzenegar.com',
+	'liveedu.tv',
+	'livetube.cc',
+	'livestream.com',
+	'meridix.com',
+	'mixcloud.com',
+	'mixer.com',
+	'mobcrush.com',
+	'mylive.in.th',
+	'myspace.com',
+	'netflix.com',
+	'newretrowave.com',
+	'nhk.or.jp',
+	'nicovideo.jp',
+	'nico.ms',
+	'noisetrade.com',
+	'nood.tv',
+	'npr.org',
+	'openrec.tv',
+	'pandora.com',
+	'pandora.tv',
+	'picarto.tv',
+	'pscp.tv',
+	'restream.io',
+	'reverbnation.com',
+	'sermonaudio.com',
+	'smashcast.tv',
+	'songkick.com',
+	'soundcloud.com',
+	'spinninrecords.com',
+	'spotify.com',
+	'stitcher.com',
+	'stream.me',
+	'switchboard.live',
+	'tunein.com',
+	'twitcasting.tv',
+	'twitch.tv',
+	'twitter.com',
+	'vaughnlive.tv',
+	'veoh.com',
+	'vimeo.com',
+	'watchpeoplecode.com',
+	'web.tv',
+	'youtube.com',
+	'youtu.be'
+];
+
 export default Vue.extend({
-	props: ['url'],
+	props: {
+		url: {
+			type: String,
+			require: true
+		},
+
+		detail: {
+			type: Boolean,
+			required: false,
+			default: false
+		},
+
+		mini: {
+			type: Boolean,
+			required: false,
+			default: false
+		}
+	},
+
 	data() {
 		return {
 			fetching: true,
@@ -33,37 +135,70 @@ export default Vue.extend({
 			thumbnail: null,
 			icon: null,
 			sitename: null,
-			youtubeId: null,
+			player: {
+				url: null,
+				width: null,
+				height: null
+			},
+			tweetUrl: null,
 			misskeyUrl
 		};
 	},
+
 	created() {
 		const url = new URL(this.url);
 
-		if (url.hostname == 'www.youtube.com') {
-			this.youtubeId = url.searchParams.get('v');
-		} else if (url.hostname == 'youtu.be') {
-			this.youtubeId = url.pathname;
-		} else {
-			fetch('/url?url=' + encodeURIComponent(this.url)).then(res => {
-				res.json().then(info => {
-					this.title = info.title;
-					this.description = info.description;
-					this.thumbnail = info.thumbnail;
-					this.icon = info.icon;
-					this.sitename = info.sitename;
+		if (this.detail && url.hostname == 'twitter.com' && /^\/.+\/status(es)?\/\d+/.test(url.pathname)) {
+			this.tweetUrl = url;
+			const twttr = (window as any).twttr || {};
+			const loadTweet = () => twttr.widgets.load(this.$refs.tweet);
 
-					this.fetching = false;
-				});
-			});
+			if (twttr.widgets) {
+				Vue.nextTick(loadTweet);
+			} else {
+				const wjsId = 'twitter-wjs';
+				if (!document.getElementById(wjsId)) {
+					const head = document.getElementsByTagName('head')[0];
+					const script = document.createElement('script');
+					script.setAttribute('id', wjsId);
+					script.setAttribute('src', 'https://platform.twitter.com/widgets.js');
+					head.appendChild(script);
+				}
+				twttr.ready = loadTweet;
+				(window as any).twttr = twttr;
+			}
+			return;
 		}
+
+		fetch(`/url?url=${encodeURIComponent(this.url)}`).then(res => {
+			res.json().then(info => {
+				if (info.url == null) return;
+				this.title = info.title;
+				this.description = info.description;
+				this.thumbnail = info.thumbnail;
+				this.icon = info.icon;
+				this.sitename = info.sitename;
+				this.fetching = false;
+				if (whiteList.some(x => x == url.hostname || url.hostname.endsWith(`.${x}`))) {
+					this.player = info.player;
+				}
+			})
+		});
 	}
 });
 </script>
 
 <style lang="stylus" scoped>
-iframe
+.player
+	position relative
 	width 100%
+
+	> iframe
+		height 100%
+		left 0
+		position absolute
+		top 0
+		width 100%
 
 root(isDark)
 	> a
@@ -152,6 +287,29 @@ root(isDark)
 				height 70px
 
 			> article
+				padding 8px
+
+				> header
+					margin-bottom 4px
+
+				> footer
+					margin-top 4px
+
+					> img
+						width 12px
+						height 12px
+
+		&.mini
+			font-size 10px
+
+			> .thumbnail
+				position relative
+				width 100%
+				height 60px
+
+			> article
+				left 0
+				width 100%
 				padding 8px
 
 				> header

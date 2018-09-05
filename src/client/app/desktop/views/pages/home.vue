@@ -16,7 +16,7 @@ export default Vue.extend({
 		}
 	},
 	mounted() {
-		document.title = 'Misskey';
+		document.title = (this as any).os.instanceName;
 
 		Progress.start();
 	},

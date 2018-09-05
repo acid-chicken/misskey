@@ -19,10 +19,6 @@ export default (params: any, user: ILocalUser) => new Promise(async (res, rej) =
 	const [markAsRead = true, markAsReadErr] = $.bool.optional.get(params.markAsRead);
 	if (markAsReadErr) return rej('invalid markAsRead param');
 
-	// Get 'type' parameter
-	const [type, typeErr] = $.arr($.str).optional.unique().get(params.type);
-	if (typeErr) return rej('invalid type param');
-
 	// Get 'limit' parameter
 	const [limit = 10, limitErr] = $.num.optional.range(1, 100).get(params.limit);
 	if (limitErr) return rej('invalid limit param');
@@ -41,8 +37,7 @@ export default (params: any, user: ILocalUser) => new Promise(async (res, rej) =
 	}
 
 	const mute = await Mute.find({
-		muterId: user._id,
-		deletedAt: { $exists: false }
+		muterId: user._id
 	});
 
 	const query = {
@@ -69,12 +64,6 @@ export default (params: any, user: ILocalUser) => new Promise(async (res, rej) =
 		});
 	}
 
-	if (type) {
-		query.type = {
-			$in: type
-		};
-	}
-
 	if (sinceId) {
 		sort._id = 1;
 		query._id = {
@@ -96,7 +85,7 @@ export default (params: any, user: ILocalUser) => new Promise(async (res, rej) =
 	// Serialize
 	res(await Promise.all(notifications.map(notification => pack(notification))));
 
-	// Mark as read all
+	// Mark all as read
 	if (notifications.length > 0 && markAsRead) {
 		read(user._id, notifications);
 	}

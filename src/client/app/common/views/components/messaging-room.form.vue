@@ -83,7 +83,7 @@ export default Vue.extend({
 				}
 			} else {
 				if (items[0].kind == 'file') {
-					alert('メッセージに添付できるのはひとつのファイルのみです');
+					alert('%i18n:only-one-file-attached%');
 				}
 			}
 		},
@@ -105,7 +105,7 @@ export default Vue.extend({
 				return;
 			} else if (e.dataTransfer.files.length > 1) {
 				e.preventDefault();
-				alert('メッセージに添付できるのはひとつのファイルのみです');
+				alert('%i18n:only-one-file-attached%');
 				return;
 			}
 
@@ -119,7 +119,7 @@ export default Vue.extend({
 		},
 
 		onKeypress(e) {
-			if ((e.which == 10 || e.which == 13) && e.ctrlKey) {
+			if ((e.which == 10 || e.which == 13) && e.ctrlKey && this.canSend) {
 				this.send();
 			}
 		},

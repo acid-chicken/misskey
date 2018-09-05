@@ -4,7 +4,7 @@ import * as uuid from 'uuid';
 import autwh from 'autwh';
 import redis from '../../../db/redis';
 import User, { pack, ILocalUser } from '../../../models/user';
-import event from '../../../stream';
+import { publishUserStream } from '../../../stream';
 import config from '../../../config';
 import signin from '../common/signin';
 
@@ -14,7 +14,7 @@ function getUserToken(ctx: Koa.Context) {
 
 function compareOrigin(ctx: Koa.Context) {
 	function normalizeUrl(url: string) {
-		return url[url.length - 1] === '/' ? url.substr(0, url.length - 1) : url;
+		return url.endsWith('/') ? url.substr(0, url.length - 1) : url;
 	}
 
 	const referer = ctx.headers['referer'];
@@ -49,7 +49,7 @@ router.get('/disconnect/twitter', async ctx => {
 	ctx.body = `Twitterの連携を解除しました :v:`;
 
 	// Publish i updated event
-	event(user._id, 'meUpdated', await pack(user, user, {
+	publishUserStream(user._id, 'meUpdated', await pack(user, user, {
 		detail: true,
 		includeSecrets: true
 	}));
@@ -174,7 +174,7 @@ if (config.twitter == null) {
 			ctx.body = `Twitter: @${result.screenName} を、Misskey: @${user.username} に接続しました！`;
 
 			// Publish i updated event
-			event(user._id, 'meUpdated', await pack(user, user, {
+			publishUserStream(user._id, 'meUpdated', await pack(user, user, {
 				detail: true,
 				includeSecrets: true
 			}));

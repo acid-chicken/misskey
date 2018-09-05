@@ -1,6 +1,6 @@
 <template>
 <mk-ui>
-	<span slot="header">%fa:home%ダッシュボード</span>
+	<span slot="header">%fa:home%%i18n:@dashboard%</span>
 	<template slot="func">
 		<button @click="customizing = !customizing">%fa:cog%</button>
 	</template>
@@ -24,8 +24,8 @@
 					<option value="nav">%i18n:common.widgets.nav%</option>
 					<option value="tips">%i18n:common.widgets.tips%</option>
 				</select>
-				<button @click="addWidget">追加</button>
-				<p><a @click="hint">カスタマイズのヒント</a></p>
+				<button @click="addWidget">%i18n:add-widget%</button>
+				<p><a @click="hint">%i18n:customization-tips%</a></p>
 			</header>
 			<x-draggable
 				:list="widgets"
@@ -102,12 +102,12 @@ export default Vue.extend({
 	},
 
 	mounted() {
-		document.title = 'Misskey';
+		document.title = (this as any).os.instanceName;
 	},
 
 	methods: {
 		hint() {
-			alert('ウィジェットを追加/削除したり並べ替えたりできます。ウィジェットを移動するには「三」をドラッグします。ウィジェットを削除するには「x」をタップします。いくつかのウィジェットはタップすることで表示を変更できます。');
+			alert('%i18n:@widgets-hints%');
 		},
 
 		widgetFunc(id) {

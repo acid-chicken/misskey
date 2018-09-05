@@ -1,5 +1,6 @@
 import Vuex from 'vuex';
 import createPersistedState from 'vuex-persistedstate';
+import * as nestedProperty from 'nested-property';
 
 import MiOS from './mios';
 import { hostname } from './config';
@@ -11,16 +12,24 @@ const defaultSettings = {
 	fetchOnScroll: true,
 	showMaps: true,
 	showPostFormOnTopOfTl: false,
+	suggestRecentHashtags: true,
+	showClockOnHeader: true,
 	circleIcons: true,
 	gradientWindowHeader: false,
 	showReplyTarget: true,
 	showMyRenotes: true,
 	showRenotedMyNotes: true,
+	showLocalRenotes: true,
 	loadRemoteMedia: true,
 	disableViaMobile: false,
 	memo: null,
 	iLikeSushi: false,
-	reversiBoardLabels: false
+	games: {
+		reversi: {
+			showBoardLabels: false,
+			useContrastStones: false
+		}
+	}
 };
 
 const defaultDeviceSettings = {
@@ -34,7 +43,8 @@ const defaultDeviceSettings = {
 	debug: false,
 	lightmode: false,
 	loadRawImages: false,
-	postStyle: 'standard'
+	postStyle: 'standard',
+	mobileNotificationPosition: 'bottom'
 };
 
 export default (os: MiOS) => new Vuex.Store({
@@ -108,6 +118,10 @@ export default (os: MiOS) => new Vuex.Store({
 						src: x.src,
 						arg: x.arg
 					};
+				},
+
+				setVisibility(state, visibility) {
+					state.visibility = visibility;
 				}
 			}
 		},
@@ -119,7 +133,7 @@ export default (os: MiOS) => new Vuex.Store({
 
 			mutations: {
 				set(state, x: { key: string; value: any }) {
-					state[x.key] = x.value;
+					nestedProperty.set(state, x.key, x.value);
 				},
 
 				setHome(state, data) {

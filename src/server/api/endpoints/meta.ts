@@ -9,33 +9,6 @@ const pkg = require('../../../../package.json');
 const client = require('../../../../built/client/meta.json');
 
 /**
- * @swagger
- * /meta:
- *   note:
- *     summary: Show the misskey's information
- *     responses:
- *       200:
- *         description: Success
- *         schema:
- *           type: object
- *           properties:
- *             maintainer:
- *               description: maintainer's name
- *               type: string
- *             commit:
- *               description: latest commit's hash
- *               type: string
- *             secure:
- *               description: whether the server supports secure protocols
- *               type: boolean
- *
- *       default:
- *         description: Failed
- *         schema:
- *           $ref: "#/definitions/Error"
- */
-
-/**
  * Show core info
  */
 export default () => new Promise(async (res, rej) => {
@@ -47,6 +20,9 @@ export default () => new Promise(async (res, rej) => {
 		version: pkg.version,
 		clientVersion: client.version,
 
+		name: config.name || 'Misskey',
+		description: config.description,
+
 		secure: config.https != null,
 		machine: os.hostname(),
 		os: os.platform(),
@@ -55,6 +31,10 @@ export default () => new Promise(async (res, rej) => {
 			model: os.cpus()[0].model,
 			cores: os.cpus().length
 		},
-		broadcasts: meta.broadcasts
+		broadcasts: meta.broadcasts,
+		disableRegistration: meta.disableRegistration,
+		driveCapacityPerLocalUserMb: config.localDriveCapacityMb,
+		recaptchaSitekey: config.recaptcha ? config.recaptcha.site_key : null,
+		swPublickey: config.sw ? config.sw.public_key : null
 	});
 });

@@ -40,17 +40,29 @@ export type Source = {
 		port: number;
 		pass: string;
 	};
-	recaptcha: {
+	recaptcha?: {
 		site_key: string;
 		secret_key: string;
 	};
 
+	localDriveCapacityMb: number;
+	remoteDriveCapacityMb: number;
 	preventCacheRemoteFiles: boolean;
+
+	drive?: {
+		storage: string;
+		bucket?: string;
+		prefix?: string;
+		baseUrl?: string;
+		config?: any;
+	};
 
 	/**
 	 * ゴーストアカウントのID
 	 */
 	ghost?: string;
+
+	summalyProxy?: string;
 
 	accesslog?: string;
 	twitter?: {
@@ -82,6 +94,8 @@ export type Source = {
 	};
 
 	google_maps_api_key: string;
+
+	clusterLimit?: number;
 };
 
 /**
@@ -100,6 +114,7 @@ export type Mixin = {
 	status_url: string;
 	dev_url: string;
 	drive_url: string;
+	user_agent: string;
 };
 
 export type Config = Source & Mixin;

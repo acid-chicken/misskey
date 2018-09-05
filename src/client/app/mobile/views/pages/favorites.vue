@@ -28,7 +28,7 @@ export default Vue.extend({
 		this.fetch();
 	},
 	mounted() {
-		document.title = 'Misskey | %i18n:@notifications%';
+		document.title = `${(this as any).os.instanceName} | %i18n:@notifications%`;
 	},
 	methods: {
 		fetch() {
@@ -53,7 +53,7 @@ export default Vue.extend({
 			this.moreFetching = true;
 			(this as any).api('i/favorites', {
 				limit: 11,
-				maxId: this.favorites[this.favorites.length - 1].id
+				untilId: this.favorites[this.favorites.length - 1].id
 			}).then(favorites => {
 				if (favorites.length == 11) {
 					this.existMore = true;

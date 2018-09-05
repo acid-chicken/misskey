@@ -24,6 +24,8 @@ import updateBanner from './api/update-banner';
 
 import MkIndex from './views/pages/index.vue';
 import MkDeck from './views/pages/deck/deck.vue';
+import MkAdmin from './views/pages/admin/admin.vue';
+import MkStats from './views/pages/stats/stats.vue';
 import MkUser from './views/pages/user/user.vue';
 import MkFavorites from './views/pages/favorites.vue';
 import MkSelectDrive from './views/pages/selectdrive.vue';
@@ -34,7 +36,7 @@ import MkMessagingRoom from './views/pages/messaging-room.vue';
 import MkNote from './views/pages/note.vue';
 import MkSearch from './views/pages/search.vue';
 import MkTag from './views/pages/tag.vue';
-import MkReversi from './views/pages/reversi.vue';
+import MkReversi from './views/pages/games/reversi.vue';
 import MkShare from './views/pages/share.vue';
 import MkFollow from '../common/views/pages/follow.vue';
 
@@ -55,6 +57,8 @@ init(async (launch) => {
 		routes: [
 			{ path: '/', name: 'index', component: MkIndex },
 			{ path: '/deck', name: 'deck', component: MkDeck },
+			{ path: '/admin', name: 'admin', component: MkAdmin },
+			{ path: '/stats', name: 'stats', component: MkStats },
 			{ path: '/i/customize-home', component: MkHomeCustomize },
 			{ path: '/i/favorites', component: MkFavorites },
 			{ path: '/i/messaging/:user', component: MkMessagingRoom },
@@ -65,8 +69,7 @@ init(async (launch) => {
 			{ path: '/search', component: MkSearch },
 			{ path: '/tags/:tag', component: MkTag },
 			{ path: '/share', component: MkShare },
-			{ path: '/reversi', component: MkReversi },
-			{ path: '/reversi/:game', component: MkReversi },
+			{ path: '/reversi/:game?', component: MkReversi },
 			{ path: '/@:user', component: MkUser },
 			{ path: '/notes/:note', component: MkNote },
 			{ path: '/authorize-follow', component: MkFollow }
@@ -93,7 +96,7 @@ init(async (launch) => {
 	/**
 	 * Init Notification
 	 */
-	if ('Notification' in window) {
+	if ('Notification' in window && os.store.getters.isSignedIn) {
 		// 許可を得ていなかったらリクエスト
 		if ((Notification as any).permission == 'default') {
 			await Notification.requestPermission();

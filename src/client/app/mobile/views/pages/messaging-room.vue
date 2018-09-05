@@ -47,7 +47,7 @@ export default Vue.extend({
 				this.user = user;
 				this.fetching = false;
 
-				document.title = `%i18n:@messaging%: ${Vue.filter('userName')(this.user)} | Misskey`;
+				document.title = `%i18n:@messaging%: ${Vue.filter('userName')(this.user)} | ${(this as any).os.instanceName}`;
 			});
 		}
 	}

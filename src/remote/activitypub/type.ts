@@ -16,6 +16,7 @@ export interface IObject {
 	image?: any;
 	url?: string;
 	tag?: any[];
+	sensitive?: boolean;
 }
 
 export interface IActivity extends IObject {
@@ -47,6 +48,7 @@ export interface IPerson extends IObject {
 	preferredUsername: string;
 	manuallyApprovesFollowers: boolean;
 	inbox: string;
+	sharedInbox?: string;
 	publicKey: any;
 	followers: any;
 	following: any;

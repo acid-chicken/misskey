@@ -1,69 +1,16 @@
 import rndstr from 'rndstr';
 import $ from 'cafy';
-import App, { isValidNameId, pack } from '../../../../models/app';
+import App, { pack } from '../../../../models/app';
 import { ILocalUser } from '../../../../models/user';
 
-/**
- * @swagger
- * /app/create:
- *   note:
- *     summary: Create an application
- *     parameters:
- *       - $ref: "#/parameters/AccessToken"
- *       -
- *         name: nameId
- *         description: Application unique name
- *         in: formData
- *         required: true
- *         type: string
- *       -
- *         name: name
- *         description: Application name
- *         in: formData
- *         required: true
- *         type: string
- *       -
- *         name: description
- *         description: Application description
- *         in: formData
- *         required: true
- *         type: string
- *       -
- *         name: permission
- *         description: Permissions that application has
- *         in: formData
- *         required: true
- *         type: array
- *         items:
- *           type: string
- *           collectionFormat: csv
- *       -
- *         name: callbackUrl
- *         description: URL called back after authentication
- *         in: formData
- *         required: false
- *         type: string
- *
- *     responses:
- *       200:
- *         description: Created application's information
- *         schema:
- *           $ref: "#/definitions/Application"
- *
- *       default:
- *         description: Failed
- *         schema:
- *           $ref: "#/definitions/Error"
- */
+export const meta = {
+	requireCredential: false
+};
 
 /**
  * Create an app
  */
 export default async (params: any, user: ILocalUser) => new Promise(async (res, rej) => {
-	// Get 'nameId' parameter
-	const [nameId, nameIdErr] = $.str.pipe(isValidNameId).get(params.nameId);
-	if (nameIdErr) return rej('invalid nameId param');
-
 	// Get 'name' parameter
 	const [name, nameErr] = $.str.get(params.name);
 	if (nameErr) return rej('invalid name param');
@@ -87,10 +34,8 @@ export default async (params: any, user: ILocalUser) => new Promise(async (res, 
 	// Create account
 	const app = await App.insert({
 		createdAt: new Date(),
-		userId: user._id,
+		userId: user && user._id,
 		name: name,
-		nameId: nameId,
-		nameIdLower: nameId.toLowerCase(),
 		description: description,
 		permission: permission,
 		callbackUrl: callbackUrl,
@@ -98,5 +43,7 @@ export default async (params: any, user: ILocalUser) => new Promise(async (res, 
 	});
 
 	// Response
-	res(await pack(app));
+	res(await pack(app, null, {
+		includeSecret: true
+	}));
 });

@@ -32,10 +32,11 @@
 						<mk-media-list :media-list="p.media"/>
 					</div>
 					<mk-poll v-if="p.poll" :note="p" ref="pollViewer"/>
-					<a class="location" v-if="p.geo" :href="`http://maps.google.com/maps?q=${p.geo.coordinates[1]},${p.geo.coordinates[0]}`" target="_blank">%fa:map-marker-alt% %i18n:@location%</a>
+					<a class="location" v-if="p.geo" :href="`https://maps.google.com/maps?q=${p.geo.coordinates[1]},${p.geo.coordinates[0]}`" target="_blank">%fa:map-marker-alt% %i18n:@location%</a>
 					<div class="renote" v-if="p.renote">
 						<mk-note-preview :note="p.renote" :mini="true"/>
 					</div>
+					<mk-url-preview v-for="url in urls" :url="url" :key="url" :detail="false" :mini="true"/>
 				</div>
 				<span class="app" v-if="p.app">via <b>{{ p.app.name }}</b></span>
 			</div>

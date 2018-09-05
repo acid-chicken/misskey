@@ -6,30 +6,30 @@ import { ILocalUser } from '../../../../../models/user';
 import getParams from '../../../get-params';
 
 export const meta = {
-	name: 'notes/reactions/create',
-
 	desc: {
-		ja: '投稿にリアクションします。'
+		'ja-JP': '指定した投稿にリアクションします。',
+		'en-US': 'React to a note.'
 	},
+
+	requireCredential: true,
+
+	kind: 'reaction-write',
 
 	params: {
 		noteId: $.type(ID).note({
 			desc: {
-				ja: '対象の投稿'
+				'ja-JP': '対象の投稿'
 			}
 		}),
 
 		reaction: $.str.pipe(validateReaction.ok).note({
 			desc: {
-				ja: 'リアクションの種類'
+				'ja-JP': 'リアクションの種類'
 			}
 		})
 	}
 };
 
-/**
- * React to a note
- */
 export default (params: any, user: ILocalUser) => new Promise(async (res, rej) => {
 	const [ps, psErr] = getParams(meta, params);
 	if (psErr) return rej(psErr);

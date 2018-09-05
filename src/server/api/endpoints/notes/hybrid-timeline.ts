@@ -10,58 +10,65 @@ export const meta = {
 	name: 'notes/hybrid-timeline',
 
 	desc: {
-		ja: 'ハイブリッドタイムラインを取得します。'
+		'ja-JP': 'ハイブリッドタイムラインを取得します。'
 	},
 
 	params: {
 		limit: $.num.optional.range(1, 100).note({
 			default: 10,
 			desc: {
-				ja: '最大数'
+				'ja-JP': '最大数'
 			}
 		}),
 
 		sinceId: $.type(ID).optional.note({
 			desc: {
-				ja: '指定すると、この投稿を基点としてより新しい投稿を取得します'
+				'ja-JP': '指定すると、この投稿を基点としてより新しい投稿を取得します'
 			}
 		}),
 
 		untilId: $.type(ID).optional.note({
 			desc: {
-				ja: '指定すると、この投稿を基点としてより古い投稿を取得します'
+				'ja-JP': '指定すると、この投稿を基点としてより古い投稿を取得します'
 			}
 		}),
 
 		sinceDate: $.num.optional.note({
 			desc: {
-				ja: '指定した時間を基点としてより新しい投稿を取得します。数値は、1970年1月1日 00:00:00 UTC から指定した日時までの経過時間をミリ秒単位で表します。'
+				'ja-JP': '指定した時間を基点としてより新しい投稿を取得します。数値は、1970年1月1日 00:00:00 UTC から指定した日時までの経過時間をミリ秒単位で表します。'
 			}
 		}),
 
 		untilDate: $.num.optional.note({
 			desc: {
-				ja: '指定した時間を基点としてより古い投稿を取得します。数値は、1970年1月1日 00:00:00 UTC から指定した日時までの経過時間をミリ秒単位で表します。'
+				'ja-JP': '指定した時間を基点としてより古い投稿を取得します。数値は、1970年1月1日 00:00:00 UTC から指定した日時までの経過時間をミリ秒単位で表します。'
 			}
 		}),
 
 		includeMyRenotes: $.bool.optional.note({
 			default: true,
 			desc: {
-				ja: '自分の行ったRenoteを含めるかどうか'
+				'ja-JP': '自分の行ったRenoteを含めるかどうか'
 			}
 		}),
 
 		includeRenotedMyNotes: $.bool.optional.note({
 			default: true,
 			desc: {
-				ja: 'Renoteされた自分の投稿を含めるかどうか'
+				'ja-JP': 'Renoteされた自分の投稿を含めるかどうか'
+			}
+		}),
+
+		includeLocalRenotes: $.bool.optional.note({
+			default: true,
+			desc: {
+				'ja-JP': 'Renoteされたローカルの投稿を含めるかどうか'
 			}
 		}),
 
 		mediaOnly: $.bool.optional.note({
 			desc: {
-				ja: 'true にすると、メディアが添付された投稿だけ取得します'
+				'ja-JP': 'true にすると、メディアが添付された投稿だけ取得します'
 			}
 		}),
 	}
@@ -82,7 +89,7 @@ export default async (params: any, user: ILocalUser) => {
 	const [followings, mutedUserIds] = await Promise.all([
 		// フォローを取得
 		// Fetch following
-		getFriends(user._id, true, true),
+		getFriends(user._id, true, false),
 
 		// ミュートしているユーザーを取得
 		Mute.find({
@@ -168,6 +175,22 @@ export default async (params: any, user: ILocalUser) => {
 		query.$and.push({
 			$or: [{
 				'_renote.userId': { $ne: user._id }
+			}, {
+				renoteId: null
+			}, {
+				text: { $ne: null }
+			}, {
+				mediaIds: { $ne: [] }
+			}, {
+				poll: { $ne: null }
+			}]
+		});
+	}
+
+	if (ps.includeLocalRenotes === false) {
+		query.$and.push({
+			$or: [{
+				'_renote.user.host': { $ne: null }
 			}, {
 				renoteId: null
 			}, {

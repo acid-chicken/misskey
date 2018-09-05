@@ -1,7 +1,6 @@
 import * as http from 'http';
 import * as websocket from 'websocket';
-import * as redis from 'redis';
-import config from '../../config';
+import Xev from 'xev';
 
 import homeStream from './stream/home';
 import localTimelineStream from './stream/local-timeline';
@@ -39,20 +38,22 @@ module.exports = (server: http.Server) => {
 			return;
 		}
 
-		// Connect to Redis
-		const subscriber = redis.createClient(
-			config.redis.port, config.redis.host);
+		const ev = new Xev();
 
-		connection.on('close', () => {
-			subscriber.unsubscribe();
-			subscriber.quit();
+		connection.once('close', () => {
+			ev.removeAllListeners();
 		});
 
 		const q = request.resourceURL.query as ParsedUrlQuery;
 		const [user, app] = await authenticate(q.i as string);
 
 		if (request.resourceURL.pathname === '/games/reversi-game') {
-			reversiGameStream(request, connection, subscriber, user);
+			reversiGameStream(request, connection, ev, user);
+			return;
+		}
+
+		if (request.resourceURL.pathname === '/local-timeline') {
+			localTimelineStream(request, connection, ev, user);
 			return;
 		}
 
@@ -64,7 +65,6 @@ module.exports = (server: http.Server) => {
 
 		const channel: any =
 			request.resourceURL.pathname === '/' ? homeStream :
-			request.resourceURL.pathname === '/local-timeline' ? localTimelineStream :
 			request.resourceURL.pathname === '/hybrid-timeline' ? hybridTimelineStream :
 			request.resourceURL.pathname === '/global-timeline' ? globalTimelineStream :
 			request.resourceURL.pathname === '/user-list' ? userListStream :
@@ -75,7 +75,7 @@ module.exports = (server: http.Server) => {
 			null;
 
 		if (channel !== null) {
-			channel(request, connection, subscriber, user, app);
+			channel(request, connection, ev, user, app);
 		} else {
 			connection.close();
 		}

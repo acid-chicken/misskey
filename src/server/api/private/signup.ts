@@ -6,16 +6,22 @@ import User, { IUser, validateUsername, validatePassword, pack } from '../../../
 import generateUserToken from '../common/generate-native-user-token';
 import config from '../../../config';
 import Meta from '../../../models/meta';
+import RegistrationTicket from '../../../models/registration-tickets';
+import { updateUserStats } from '../../../services/update-chart';
 
-recaptcha.init({
-	secret_key: config.recaptcha.secret_key
-});
+if (config.recaptcha) {
+	recaptcha.init({
+		secret_key: config.recaptcha.secret_key
+	});
+}
 
 export default async (ctx: Koa.Context) => {
+	const body = ctx.request.body as any;
+
 	// Verify recaptcha
 	// ただしテスト時はこの機構は障害となるため無効にする
-	if (process.env.NODE_ENV !== 'test') {
-		const success = await recaptcha(ctx.request.body['g-recaptcha-response']);
+	if (process.env.NODE_ENV !== 'test' && config.recaptcha != null) {
+		const success = await recaptcha(body['g-recaptcha-response']);
 
 		if (!success) {
 			ctx.throw(400, 'recaptcha-failed');
@@ -23,8 +29,31 @@ export default async (ctx: Koa.Context) => {
 		}
 	}
 
-	const username = ctx.request.body['username'];
-	const password = ctx.request.body['password'];
+	const username = body['username'];
+	const password = body['password'];
+	const invitationCode = body['invitationCode'];
+
+	const meta = await Meta.findOne({});
+
+	if (meta && meta.disableRegistration) {
+		if (invitationCode == null || typeof invitationCode != 'string') {
+			ctx.status = 400;
+			return;
+		}
+
+		const ticket = await RegistrationTicket.findOne({
+			code: invitationCode
+		});
+
+		if (ticket == null) {
+			ctx.status = 400;
+			return;
+		}
+
+		RegistrationTicket.remove({
+			_id: ticket._id
+		});
+	}
 
 	// Validate username
 	if (!validateUsername(username)) {
@@ -44,8 +73,8 @@ export default async (ctx: Koa.Context) => {
 			usernameLower: username.toLowerCase(),
 			host: null
 		}, {
-			limit: 1
-		});
+				limit: 1
+			});
 
 	// Check username already used
 	if (usernameExist !== 0) {
@@ -70,7 +99,6 @@ export default async (ctx: Koa.Context) => {
 		followingCount: 0,
 		name: null,
 		notesCount: 0,
-		driveCapacity: 1024 * 1024 * 128, // 128MiB
 		username: username,
 		usernameLower: username.toLowerCase(),
 		host: null,
@@ -89,7 +117,7 @@ export default async (ctx: Koa.Context) => {
 			weight: null
 		},
 		settings: {
-			autoWatch: true
+			autoWatch: false
 		}
 	});
 
@@ -101,6 +129,8 @@ export default async (ctx: Koa.Context) => {
 		}
 	}, { upsert: true });
 	//#endregion
+
+	updateUserStats(account, true);
 
 	// Response
 	ctx.body = await pack(account);

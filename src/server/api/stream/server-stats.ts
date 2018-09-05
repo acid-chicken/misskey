@@ -16,13 +16,16 @@ export default function(request: websocket.request, connection: websocket.connec
 
 		switch (msg.type) {
 			case 'requestLog':
-				ev.once('serverStatsLog:' + msg.id, statsLog => {
+				ev.once(`serverStatsLog:${msg.id}`, statsLog => {
 					connection.send(JSON.stringify({
 						type: 'statsLog',
 						body: statsLog
 					}));
 				});
-				ev.emit('requestServerStatsLog', msg.id);
+				ev.emit('requestServerStatsLog', {
+					id: msg.id,
+					length: msg.length
+				});
 				break;
 		}
 	});

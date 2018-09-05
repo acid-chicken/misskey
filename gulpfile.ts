@@ -9,6 +9,7 @@ import * as ts from 'gulp-typescript';
 const sourcemaps = require('gulp-sourcemaps');
 import tslint from 'gulp-tslint';
 const cssnano = require('gulp-cssnano');
+const stylus = require('gulp-stylus');
 import * as uglifyComposer from 'gulp-uglify/composer';
 import pug = require('gulp-pug');
 import * as rimraf from 'rimraf';
@@ -22,8 +23,6 @@ const uglifyes = require('uglify-es');
 
 const locales = require('./locales');
 import { fa } from './src/misc/fa';
-const client = require('./built/client/meta.json');
-import config from './src/config';
 
 const uglify = uglifyComposer(uglifyes, console);
 
@@ -38,16 +37,12 @@ if (isDebug) {
 
 const constants = require('./src/const.json');
 
-require('./src/client/docs/gulpfile.ts');
-
 gulp.task('build', [
 	'build:ts',
 	'build:copy',
 	'build:client',
 	'doc'
 ]);
-
-gulp.task('rebuild', ['clean', 'build']);
 
 gulp.task('build:ts', () => {
 	const tsProject = ts.createProject('./tsconfig.json');
@@ -64,7 +59,16 @@ gulp.task('build:copy:views', () =>
 	gulp.src('./src/server/web/views/**/*').pipe(gulp.dest('./built/server/web/views'))
 );
 
-gulp.task('build:copy', ['build:copy:views'], () =>
+// 互換性のため
+gulp.task('build:copy:lang', () =>
+	gulp.src(['./built/client/assets/*.*-*.js'])
+		.pipe(rename(path => {
+			path.basename = path.basename.replace(/\-(.*)$/, '');
+		}))
+		.pipe(gulp.dest('./built/client/assets/'))
+);
+
+gulp.task('build:copy', ['build:copy:views', 'build:copy:lang'], () =>
 	gulp.src([
 		'./build/Release/crypto_key.node',
 		'./src/const.json',
@@ -85,19 +89,19 @@ gulp.task('lint', () =>
 );
 
 gulp.task('format', () =>
-gulp.src('./src/**/*.ts')
-	.pipe(tslint({
-		formatter: 'verbose',
-		fix: true
-	}))
-	.pipe(tslint.report())
+	gulp.src('./src/**/*.ts')
+		.pipe(tslint({
+			formatter: 'verbose',
+			fix: true
+		}))
+		.pipe(tslint.report())
 );
 
 gulp.task('mocha', () =>
-	gulp.src([])
+	gulp.src('./test/**/*.ts')
 		.pipe(mocha({
 			exit: true,
-			compilers: 'ts:ts-node/register'
+			require: 'ts-node/register'
 		} as any))
 );
 
@@ -118,17 +122,17 @@ gulp.task('build:client', [
 	'copy:client'
 ]);
 
-gulp.task('build:client:script', () =>
-	gulp.src(['./src/client/app/boot.js', './src/client/app/safe.js'])
+gulp.task('build:client:script', () => {
+	const client = require('./built/client/meta.json');
+	return gulp.src(['./src/client/app/boot.js', './src/client/app/safe.js'])
 		.pipe(replace('VERSION', JSON.stringify(client.version)))
-		.pipe(replace('API', JSON.stringify(config.api_url)))
 		.pipe(replace('ENV', JSON.stringify(env)))
 		.pipe(replace('LANGS', JSON.stringify(Object.keys(locales))))
 		.pipe(isProduction ? uglify({
 			toplevel: true
 		} as any) : gutil.noop())
-		.pipe(gulp.dest('./built/client/assets/')) as any
-);
+		.pipe(gulp.dest('./built/client/assets/'));
+});
 
 gulp.task('build:client:styles', () =>
 	gulp.src('./src/client/app/init.css')
@@ -200,4 +204,11 @@ gulp.task('build:client:pug', [
 				minifyCSS: true
 			}))
 			.pipe(gulp.dest('./built/client/app/'))
+);
+
+gulp.task('doc', () =>
+	gulp.src('./src/docs/**/*.styl')
+		.pipe(stylus())
+		.pipe((cssnano as any)())
+		.pipe(gulp.dest('./built/docs/assets/'))
 );

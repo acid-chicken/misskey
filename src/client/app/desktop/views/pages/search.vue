@@ -6,7 +6,8 @@
 	<div :class="$style.loading" v-if="fetching">
 		<mk-ellipsis-icon/>
 	</div>
-	<p :class="$style.empty" v-if="!fetching && empty">%fa:search%「{{ q }}」に関する投稿は見つかりませんでした。</p>
+	<p :class="$style.notAvailable" v-if="!fetching && notAvailable">%i18n:@not-available%</p>
+	<p :class="$style.empty" v-if="!fetching && empty">%fa:search% {{ '%i18n:not-found%'.split('{}')[0] }}{{ q }}{{ '%i18n:not-found%'.split('{}')[1] }}</p>
 	<mk-notes ref="timeline" :class="$style.notes" :more="existMore ? more : null"/>
 </mk-ui>
 </template>
@@ -24,7 +25,8 @@ export default Vue.extend({
 			moreFetching: false,
 			existMore: false,
 			offset: 0,
-			empty: false
+			empty: false,
+			notAvailable: false
 		};
 	},
 	watch: {
@@ -71,7 +73,11 @@ export default Vue.extend({
 					res(notes);
 					this.fetching = false;
 					Progress.done();
-				}, rej);
+				}, (e: string) => {
+					this.fetching = false;
+					Progress.done();
+					if (e === 'searching not available') this.notAvailable = true;
+				});
 			}));
 		},
 		more() {
@@ -130,4 +136,18 @@ export default Vue.extend({
 		font-size 3em
 		color #ccc
 
+
+.notAvailable
+	display block
+	margin 0 auto
+	padding 32px
+	max-width 400px
+	text-align center
+	color #999
+
+	> [data-fa]
+		display block
+		margin-bottom 16px
+		font-size 3em
+		color #ccc
 </style>

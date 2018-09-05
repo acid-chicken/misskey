@@ -7,69 +7,74 @@ import { ILocalUser } from '../../../../models/user';
 import getParams from '../../get-params';
 
 export const meta = {
-	name: 'notes/timeline',
-
 	desc: {
-		ja: 'タイムラインを取得します。'
+		'ja-JP': 'タイムラインを取得します。',
+		'en-US': 'Get timeline of myself.'
 	},
+
+	requireCredential: true,
 
 	params: {
 		limit: $.num.optional.range(1, 100).note({
 			default: 10,
 			desc: {
-				ja: '最大数'
+				'ja-JP': '最大数'
 			}
 		}),
 
 		sinceId: $.type(ID).optional.note({
 			desc: {
-				ja: '指定すると、この投稿を基点としてより新しい投稿を取得します'
+				'ja-JP': '指定すると、この投稿を基点としてより新しい投稿を取得します'
 			}
 		}),
 
 		untilId: $.type(ID).optional.note({
 			desc: {
-				ja: '指定すると、この投稿を基点としてより古い投稿を取得します'
+				'ja-JP': '指定すると、この投稿を基点としてより古い投稿を取得します'
 			}
 		}),
 
 		sinceDate: $.num.optional.note({
 			desc: {
-				ja: '指定した時間を基点としてより新しい投稿を取得します。数値は、1970年1月1日 00:00:00 UTC から指定した日時までの経過時間をミリ秒単位で表します。'
+				'ja-JP': '指定した時間を基点としてより新しい投稿を取得します。数値は、1970年1月1日 00:00:00 UTC から指定した日時までの経過時間をミリ秒単位で表します。'
 			}
 		}),
 
 		untilDate: $.num.optional.note({
 			desc: {
-				ja: '指定した時間を基点としてより古い投稿を取得します。数値は、1970年1月1日 00:00:00 UTC から指定した日時までの経過時間をミリ秒単位で表します。'
+				'ja-JP': '指定した時間を基点としてより古い投稿を取得します。数値は、1970年1月1日 00:00:00 UTC から指定した日時までの経過時間をミリ秒単位で表します。'
 			}
 		}),
 
 		includeMyRenotes: $.bool.optional.note({
 			default: true,
 			desc: {
-				ja: '自分の行ったRenoteを含めるかどうか'
+				'ja-JP': '自分の行ったRenoteを含めるかどうか'
 			}
 		}),
 
 		includeRenotedMyNotes: $.bool.optional.note({
 			default: true,
 			desc: {
-				ja: 'Renoteされた自分の投稿を含めるかどうか'
+				'ja-JP': 'Renoteされた自分の投稿を含めるかどうか'
+			}
+		}),
+
+		includeLocalRenotes: $.bool.optional.note({
+			default: true,
+			desc: {
+				'ja-JP': 'Renoteされたローカルの投稿を含めるかどうか'
 			}
 		}),
 
 		mediaOnly: $.bool.optional.note({
 			desc: {
-				ja: 'true にすると、メディアが添付された投稿だけ取得します'
+				'ja-JP': 'true にすると、メディアが添付された投稿だけ取得します'
 			}
 		}),
 	}
 };
 
-/**
- * Get timeline of myself
- */
 export default async (params: any, user: ILocalUser) => {
 	const [ps, psErr] = getParams(meta, params);
 	if (psErr) throw psErr;
@@ -160,6 +165,22 @@ export default async (params: any, user: ILocalUser) => {
 		query.$and.push({
 			$or: [{
 				'_renote.userId': { $ne: user._id }
+			}, {
+				renoteId: null
+			}, {
+				text: { $ne: null }
+			}, {
+				mediaIds: { $ne: [] }
+			}, {
+				poll: { $ne: null }
+			}]
+		});
+	}
+
+	if (ps.includeLocalRenotes === false) {
+		query.$and.push({
+			$or: [{
+				'_renote.user.host': { $ne: null }
 			}, {
 				renoteId: null
 			}, {

@@ -15,7 +15,7 @@ import Progress from '../../../common/scripts/loading';
 
 export default Vue.extend({
 	mounted() {
-		document.title = 'Misskey | %i18n:@notifications%';
+		document.title = '%i18n:@notifications%';
 
 		Progress.start();
 	},
@@ -24,7 +24,7 @@ export default Vue.extend({
 			const ok = window.confirm('%i18n:@read-all%');
 			if (!ok) return;
 
-			(this as any).api('notifications/mark_as_read_all');
+			(this as any).api('notifications/mark_all_as_read');
 		},
 		onFetched() {
 			Progress.done();

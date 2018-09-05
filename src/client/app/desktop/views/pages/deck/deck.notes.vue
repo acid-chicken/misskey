@@ -72,7 +72,7 @@ export default Vue.extend({
 				const date = new Date(note.createdAt).getDate();
 				const month = new Date(note.createdAt).getMonth() + 1;
 				note._date = date;
-				note._datetext = `${month}月 ${date}日`;
+				note._datetext = '%i18n:common.month-and-day%'.replace('{month}', month.toString()).replace('{day}', date.toString());
 				return note;
 			});
 		}
@@ -137,6 +137,12 @@ export default Vue.extend({
 
 			if (this.$store.state.settings.showRenotedMyNotes === false) {
 				if (isPureRenote && (note.renote.userId == this.$store.state.i.id)) {
+					return;
+				}
+			}
+
+			if (this.$store.state.settings.showLocalRenotes === false) {
+				if (isPureRenote && (note.renote.user.host == null)) {
 					return;
 				}
 			}

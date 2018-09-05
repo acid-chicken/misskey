@@ -1,47 +1,50 @@
 <template>
 <form class="mk-signup" @submit.prevent="onSubmit" :autocomplete="Math.random()">
-	<ui-input v-model="username" type="text" pattern="^[a-zA-Z0-9_]{1,20}$" :autocomplete="Math.random()" spellcheck="false" required @input="onChangeUsername">
-		<span>%i18n:@username%</span>
-		<span slot="prefix">@</span>
-		<span slot="suffix">@{{ host }}</span>
-		<p slot="text" v-if="usernameState == 'wait'" style="color:#999">%fa:spinner .pulse .fw% %i18n:@checking%</p>
-		<p slot="text" v-if="usernameState == 'ok'" style="color:#3CB7B5">%fa:check .fw% %i18n:@available%</p>
-		<p slot="text" v-if="usernameState == 'unavailable'" style="color:#FF1161">%fa:exclamation-triangle .fw% %i18n:@unavailable%</p>
-		<p slot="text" v-if="usernameState == 'error'" style="color:#FF1161">%fa:exclamation-triangle .fw% %i18n:@error%</p>
-		<p slot="text" v-if="usernameState == 'invalid-format'" style="color:#FF1161">%fa:exclamation-triangle .fw% %i18n:@invalid-format%</p>
-		<p slot="text" v-if="usernameState == 'min-range'" style="color:#FF1161">%fa:exclamation-triangle .fw% %i18n:@too-short%</p>
-		<p slot="text" v-if="usernameState == 'max-range'" style="color:#FF1161">%fa:exclamation-triangle .fw% %i18n:@too-long%</p>
-	</ui-input>
-	<ui-input v-model="password" type="password" :autocomplete="Math.random()" required @input="onChangePassword" :with-password-meter="true">
-		<span>%i18n:@password%</span>
-		<span slot="prefix">%fa:lock%</span>
-		<div slot="text">
-			<p slot="text" v-if="passwordStrength == 'low'" style="color:#FF1161">%fa:exclamation-triangle .fw% %i18n:@weak-password%</p>
-			<p slot="text" v-if="passwordStrength == 'medium'" style="color:#3CB7B5">%fa:check .fw% %i18n:@normal-password%</p>
-			<p slot="text" v-if="passwordStrength == 'high'" style="color:#3CB7B5">%fa:check .fw% %i18n:@strong-password%</p>
-		</div>
-	</ui-input>
-	<ui-input v-model="retypedPassword" type="password" :autocomplete="Math.random()" required @input="onChangePasswordRetype">
-		<span>%i18n:@password% (%i18n:@retype%)</span>
-		<span slot="prefix">%fa:lock%</span>
-		<div slot="text">
-			<p slot="text" v-if="passwordRetypeState == 'match'" style="color:#3CB7B5">%fa:check .fw% %i18n:@password-matched%</p>
-			<p slot="text" v-if="passwordRetypeState == 'not-match'" style="color:#FF1161">%fa:exclamation-triangle .fw% %i18n:@password-not-matched%</p>
-		</div>
-	</ui-input>
-	<div class="g-recaptcha" :data-sitekey="recaptchaSitekey" style="margin: 16px 0;"></div>
-	<label class="agree-tou" style="display: block; margin: 16px 0;">
-		<input name="agree-tou" type="checkbox" required/>
-		<p><a :href="touUrl" target="_blank">利用規約</a>に同意する</p>
-	</label>
-	<ui-button type="submit">%i18n:@create%</ui-button>
+	<template v-if="meta">
+		<ui-input v-if="meta.disableRegistration" v-model="invitationCode" type="text" :autocomplete="Math.random()" spellcheck="false" required>
+			<span>%i18n:@invitation-code%</span>
+			<span slot="prefix">%fa:id-card-alt%</span>
+			<p slot="text" v-html="'%i18n:@invitation-info%'.replace('{}', meta.maintainer.url)"></p>
+		</ui-input>
+		<ui-input v-model="username" type="text" pattern="^[a-zA-Z0-9_]{1,20}$" :autocomplete="Math.random()" spellcheck="false" required @input="onChangeUsername">
+			<span>%i18n:@username%</span>
+			<span slot="prefix">@</span>
+			<span slot="suffix">@{{ host }}</span>
+			<p slot="text" v-if="usernameState == 'wait'" style="color:#999">%fa:spinner .pulse .fw% %i18n:@checking%</p>
+			<p slot="text" v-if="usernameState == 'ok'" style="color:#3CB7B5">%fa:check .fw% %i18n:@available%</p>
+			<p slot="text" v-if="usernameState == 'unavailable'" style="color:#FF1161">%fa:exclamation-triangle .fw% %i18n:@unavailable%</p>
+			<p slot="text" v-if="usernameState == 'error'" style="color:#FF1161">%fa:exclamation-triangle .fw% %i18n:@error%</p>
+			<p slot="text" v-if="usernameState == 'invalid-format'" style="color:#FF1161">%fa:exclamation-triangle .fw% %i18n:@invalid-format%</p>
+			<p slot="text" v-if="usernameState == 'min-range'" style="color:#FF1161">%fa:exclamation-triangle .fw% %i18n:@too-short%</p>
+			<p slot="text" v-if="usernameState == 'max-range'" style="color:#FF1161">%fa:exclamation-triangle .fw% %i18n:@too-long%</p>
+		</ui-input>
+		<ui-input v-model="password" type="password" :autocomplete="Math.random()" required @input="onChangePassword" :with-password-meter="true">
+			<span>%i18n:@password%</span>
+			<span slot="prefix">%fa:lock%</span>
+			<div slot="text">
+				<p slot="text" v-if="passwordStrength == 'low'" style="color:#FF1161">%fa:exclamation-triangle .fw% %i18n:@weak-password%</p>
+				<p slot="text" v-if="passwordStrength == 'medium'" style="color:#3CB7B5">%fa:check .fw% %i18n:@normal-password%</p>
+				<p slot="text" v-if="passwordStrength == 'high'" style="color:#3CB7B5">%fa:check .fw% %i18n:@strong-password%</p>
+			</div>
+		</ui-input>
+		<ui-input v-model="retypedPassword" type="password" :autocomplete="Math.random()" required @input="onChangePasswordRetype">
+			<span>%i18n:@password% (%i18n:@retype%)</span>
+			<span slot="prefix">%fa:lock%</span>
+			<div slot="text">
+				<p slot="text" v-if="passwordRetypeState == 'match'" style="color:#3CB7B5">%fa:check .fw% %i18n:@password-matched%</p>
+				<p slot="text" v-if="passwordRetypeState == 'not-match'" style="color:#FF1161">%fa:exclamation-triangle .fw% %i18n:@password-not-matched%</p>
+			</div>
+		</ui-input>
+		<div v-if="meta.recaptchaSitekey != null" class="g-recaptcha" :data-sitekey="meta.recaptchaSitekey" style="margin: 16px 0;"></div>
+		<ui-button type="submit">%i18n:@create%</ui-button>
+	</template>
 </form>
 </template>
 
 <script lang="ts">
 import Vue from 'vue';
 const getPasswordStrength = require('syuilo-password-strength');
-import { host, url, docsUrl, lang, recaptchaSitekey } from '../../../config';
+import { host, url } from '../../../config';
 
 export default Vue.extend({
 	data() {
@@ -50,12 +53,12 @@ export default Vue.extend({
 			username: '',
 			password: '',
 			retypedPassword: '',
+			invitationCode: '',
 			url,
-			touUrl: `${docsUrl}/${lang}/tou`,
-			recaptchaSitekey,
 			usernameState: null,
 			passwordStrength: '',
-			passwordRetypeState: null
+			passwordRetypeState: null,
+			meta: null
 		}
 	},
 	computed: {
@@ -65,6 +68,17 @@ export default Vue.extend({
 				this.usernameState != 'min-range' &&
 				this.usernameState != 'max-range');
 		}
+	},
+	created() {
+		(this as any).os.getMeta().then(meta => {
+			this.meta = meta;
+		});
+	},
+	mounted() {
+		const head = document.getElementsByTagName('head')[0];
+		const script = document.createElement('script');
+		script.setAttribute('src', 'https://www.google.com/recaptcha/api.js');
+		head.appendChild(script);
 	},
 	methods: {
 		onChangeUsername() {
@@ -115,7 +129,8 @@ export default Vue.extend({
 			(this as any).api('signup', {
 				username: this.username,
 				password: this.password,
-				'g-recaptcha-response': (window as any).grecaptcha.getResponse()
+				invitationCode: this.invitationCode,
+				'g-recaptcha-response': this.meta.recaptchaSitekey != null ? (window as any).grecaptcha.getResponse() : null
 			}).then(() => {
 				(this as any).api('signin', {
 					username: this.username,
@@ -126,15 +141,11 @@ export default Vue.extend({
 			}).catch(() => {
 				alert('%i18n:@some-error%');
 
-				(window as any).grecaptcha.reset();
+				if (this.meta.recaptchaSitekey != null) {
+					(window as any).grecaptcha.reset();
+				}
 			});
 		}
-	},
-	mounted() {
-		const head = document.getElementsByTagName('head')[0];
-		const script = document.createElement('script');
-		script.setAttribute('src', 'https://www.google.com/recaptcha/api.js');
-		head.appendChild(script);
 	}
 });
 </script>
@@ -144,22 +155,4 @@ export default Vue.extend({
 
 .mk-signup
 	min-width 302px
-
-	.agree-tou
-		padding 4px
-		border-radius 4px
-
-		&:hover
-			background #f4f4f4
-
-		&:active
-			background #eee
-
-		&, *
-			cursor pointer
-
-		p
-			display inline
-			color #555
-
 </style>

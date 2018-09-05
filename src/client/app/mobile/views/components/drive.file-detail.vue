@@ -1,5 +1,5 @@
 <template>
-<div class="file-detail">
+<div class="pyvicwrksnfyhpfgkjwqknuururpaztw">
 	<div class="preview">
 		<img v-if="kind == 'image'" ref="img"
 			:src="file.url"
@@ -25,11 +25,15 @@
 	</div>
 	<div class="info">
 		<div>
-			<span class="type"><mk-file-type-icon :type="file.type"/>{{ file.type }}</span>
+			<span class="type"><mk-file-type-icon :type="file.type"/> {{ file.type }}</span>
 			<span class="separator"></span>
 			<span class="data-size">{{ file.datasize | bytes }}</span>
 			<span class="separator"></span>
 			<span class="created-at" @click="showCreatedAt">%fa:R clock%<mk-time :time="file.createdAt"/></span>
+			<template v-if="file.isSensitive">
+				<span class="separator"></span>
+				<span class="nsfw">%fa:eye-slash% %i18n:@nsfw%</span>
+			</template>
 		</div>
 	</div>
 	<div class="menu">
@@ -130,11 +134,10 @@ export default Vue.extend({
 </script>
 
 <style lang="stylus" scoped>
-.file-detail
-
+root(isDark)
 	> .preview
 		padding 8px
-		background #f0f0f0
+		background isDark ? #191b22 : #f0f0f0
 
 		> img
 			display block
@@ -146,7 +149,7 @@ export default Vue.extend({
 		> footer
 			padding 8px 8px 0 8px
 			font-size 0.8em
-			color #888
+			color isDark ? #606984 : #888
 			text-align center
 
 			> .separator
@@ -175,32 +178,27 @@ export default Vue.extend({
 	> .info
 		padding 14px
 		font-size 0.8em
-		border-top solid 1px #dfdfdf
+		border-top solid 1px isDark ? #1c2023 : #dfdfdf
 
 		> div
 			max-width 500px
 			margin 0 auto
+			color isDark ? #9397a2 : #9d9d9d
 
 			> .separator
 				padding 0 4px
-				color #cdcdcd
-
-			> .type
-			> .data-size
-				color #9d9d9d
-
-				> mk-file-type-icon
-					margin-right 4px
 
 			> .created-at
-				color #bdbdbd
 
 				> [data-fa]
 					margin-right 2px
 
+			> .nsfw
+				color #bf4633
+
 	> .menu
 		padding 14px
-		border-top solid 1px #dfdfdf
+		border-top solid 1px isDark ? #1c2023 : #dfdfdf
 
 		> div
 			max-width 500px
@@ -211,14 +209,14 @@ export default Vue.extend({
 				width 100%
 				padding 10px 16px
 				margin 0 0 12px 0
-				color #333
+				color isDark ? #dfe3e8 : #333
 				font-size 0.9em
 				text-align center
 				text-decoration none
-				text-shadow 0 1px 0 rgba(255, 255, 255, 0.9)
-				background-image linear-gradient(#fafafa, #eaeaea)
-				border 1px solid #ddd
-				border-bottom-color #cecece
+				text-shadow 0 1px 0 isDark ? rgba(0, 0, 0, 0.9) : rgba(255, 255, 255, 0.9)
+				background-image isDark ? linear-gradient(#292f3c, #1b2025) : linear-gradient(#fafafa, #eaeaea)
+				border 1px solid isDark ? #121417 : #ddd
+				border-bottom-color isDark ? #060606 : #cecece
 				border-radius 3px
 
 				&:last-child
@@ -235,7 +233,7 @@ export default Vue.extend({
 
 	> .hash
 		padding 14px
-		border-top solid 1px #dfdfdf
+		border-top solid 1px isDark ? #1c2023 : #dfdfdf
 
 		> div
 			max-width 500px
@@ -245,7 +243,7 @@ export default Vue.extend({
 				display block
 				margin 0
 				padding 0
-				color #555
+				color isDark ? #a8b7d0 : #555
 				font-size 0.9em
 
 				> [data-fa]
@@ -266,7 +264,7 @@ export default Vue.extend({
 
 	> .exif
 		padding 14px
-		border-top solid 1px #dfdfdf
+		border-top solid 1px isDark ? #1c2023 : #dfdfdf
 
 		> div
 			max-width 500px
@@ -276,7 +274,7 @@ export default Vue.extend({
 				display block
 				margin 0
 				padding 0
-				color #555
+				color isDark ? #a8b7d0 : #555
 				font-size 0.9em
 
 				> [data-fa]
@@ -293,5 +291,11 @@ export default Vue.extend({
 				border solid 1px #dfdfdf
 				border-radius 2px
 				background #f5f5f5
+
+.pyvicwrksnfyhpfgkjwqknuururpaztw[data-darkmode]
+	root(true)
+
+.pyvicwrksnfyhpfgkjwqknuururpaztw:not([data-darkmode])
+	root(false)
 
 </style>

@@ -1,6 +1,6 @@
 <template>
 <mk-ui>
-	<template slot="header" v-if="!fetching"><img :src="`${user.avatarUrl}?thumbnail&size=64`" alt="">{{ user | userName }}</template>
+	<template slot="header" v-if="!fetching"><img :src="user.avatarUrl" alt="">{{ user | userName }}</template>
 	<main v-if="!fetching" :data-darkmode="$store.state.device.darkmode">
 		<div class="is-suspended" v-if="user.isSuspended"><p>%fa:exclamation-triangle% %i18n:@is-suspended%</p></div>
 		<div class="is-remote" v-if="user.host != null"><p>%fa:exclamation-triangle% %i18n:@is-remote%<a :href="user.url || user.uri" target="_blank">%i18n:@view-remote%</a></p></div>
@@ -11,6 +11,7 @@
 					<a class="avatar">
 						<img :src="user.avatarUrl" alt="avatar"/>
 					</a>
+					<mk-mute-button v-if="$store.getters.isSignedIn && $store.state.i.id != user.id" :user="user"/>
 					<mk-follow-button v-if="$store.getters.isSignedIn && $store.state.i.id != user.id" :user="user"/>
 				</div>
 				<div class="title">
@@ -106,7 +107,7 @@ export default Vue.extend({
 				this.fetching = false;
 
 				Progress.done();
-				document.title = Vue.filter('userName')(this.user) + ' | Misskey';
+				document.title = `${Vue.filter('userName')(this.user)} | ${(this as any).os.instanceName}`;
 			});
 		}
 	}
@@ -184,6 +185,9 @@ root(isDark)
 							border 4px solid $bg
 							border-radius 12px
 
+				> .mk-mute-button
+					float right
+
 				> .mk-follow-button
 					float right
 
@@ -247,7 +251,7 @@ root(isDark)
 		top 47px
 		box-shadow 0 4px 4px isDark ? rgba(#000, 0.3) : rgba(#000, 0.07)
 		background-color $bg
-		z-index 1
+		z-index 2
 
 		> .nav-container
 			display flex

@@ -2,9 +2,12 @@ import $ from 'cafy'; import ID from '../../../../misc/cafy-id';
 import DriveFile, { pack } from '../../../../models/drive-file';
 import { ILocalUser } from '../../../../models/user';
 
-/**
- * Get drive stream
- */
+export const meta = {
+	requireCredential: true,
+
+	kind: 'drive-read'
+};
+
 export default (params: any, user: ILocalUser) => new Promise(async (res, rej) => {
 	// Get 'limit' parameter
 	const [limit = 10, limitErr] = $.num.optional.range(1, 100).get(params.limit);
@@ -31,9 +34,12 @@ export default (params: any, user: ILocalUser) => new Promise(async (res, rej) =
 	const sort = {
 		_id: -1
 	};
+
 	const query = {
-		'metadata.userId': user._id
+		'metadata.userId': user._id,
+		'metadata.deletedAt': { $exists: false }
 	} as any;
+
 	if (sinceId) {
 		sort._id = 1;
 		query._id = {
@@ -44,6 +50,7 @@ export default (params: any, user: ILocalUser) => new Promise(async (res, rej) =
 			$lt: untilId
 		};
 	}
+
 	if (type) {
 		query.contentType = new RegExp(`^${type.replace(/\*/g, '.+?')}$`);
 	}
@@ -56,6 +63,5 @@ export default (params: any, user: ILocalUser) => new Promise(async (res, rej) =
 		});
 
 	// Serialize
-	res(await Promise.all(files.map(async file =>
-		await pack(file))));
+	res(await Promise.all(files.map(file => pack(file))));
 });

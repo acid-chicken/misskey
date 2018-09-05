@@ -6,14 +6,21 @@ import User, { ILocalUser } from '../../../../../models/user';
 import Mute from '../../../../../models/mute';
 import DriveFile from '../../../../../models/drive-file';
 import { pack } from '../../../../../models/messaging-message';
-import publishUserStream from '../../../../../stream';
+import { publishUserStream } from '../../../../../stream';
 import { publishMessagingStream, publishMessagingIndexStream } from '../../../../../stream';
 import pushSw from '../../../../../push-sw';
-import config from '../../../../../config';
 
-/**
- * Create a message
- */
+export const meta = {
+	desc: {
+		'ja-JP': '指定したユーザーへMessagingのメッセージを送信します。',
+		'en-US': 'Create a message of messaging.'
+	},
+
+	requireCredential: true,
+
+	kind: 'messaging-write'
+};
+
 export default (params: any, user: ILocalUser) => new Promise(async (res, rej) => {
 	// Get 'userId' parameter
 	const [recipientId, recipientIdErr] = $.type(ID).get(params.userId);
@@ -67,7 +74,7 @@ export default (params: any, user: ILocalUser) => new Promise(async (res, rej) =
 		createdAt: new Date(),
 		fileId: file ? file._id : undefined,
 		recipientId: recipient._id,
-		text: text ? text : undefined,
+		text: text ? text.trim() : undefined,
 		userId: user._id,
 		isRead: false
 	});
@@ -114,20 +121,6 @@ export default (params: any, user: ILocalUser) => new Promise(async (res, rej) =
 			pushSw(message.recipientId, 'unread_messaging_message', messageObj);
 		}
 	}, 3000);
-
-	// Register to search database
-	if (message.text && config.elasticsearch) {
-		const es = require('../../../db/elasticsearch');
-
-		es.index({
-			index: 'misskey',
-			type: 'messaging_message',
-			id: message._id.toString(),
-			body: {
-				text: message.text
-			}
-		});
-	}
 
 	// 履歴作成(自分)
 	History.update({

@@ -4,6 +4,8 @@
 
 Error.stackTraceLimit = Infinity;
 
+require('events').EventEmitter.defaultMaxListeners = 128;
+
 import * as os from 'os';
 import * as cluster from 'cluster';
 import * as debug from 'debug';
@@ -11,12 +13,13 @@ import chalk from 'chalk';
 import * as portscanner from 'portscanner';
 import isRoot = require('is-root');
 import Xev from 'xev';
+import * as program from 'commander';
+import mongo from './db/mongodb';
 
 import Logger from './misc/logger';
 import ProgressBar from './misc/cli/progressbar';
 import EnvironmentInfo from './misc/environmentInfo';
 import MachineInfo from './misc/machineInfo';
-import DependencyInfo from './misc/dependencyInfo';
 import serverStats from './daemons/server-stats';
 import notesStats from './daemons/notes-stats';
 import loadConfig from './config/load';
@@ -25,29 +28,42 @@ import { Config } from './config/types';
 const clusterLog = debug('misskey:cluster');
 const ev = new Xev();
 
-process.title = 'Misskey';
-
-if (process.env.NODE_ENV != 'production') {
-	process.env.DEBUG = 'misskey:*';
+if (process.env.NODE_ENV != 'production' && process.env.DEBUG == null) {
+	debug.enable('misskey');
 }
 
-// https://github.com/Automattic/kue/issues/822
-require('events').EventEmitter.prototype._maxListeners = 512;
+const pkg = require('../package.json');
 
-// Start app
+//#region Command line argument definitions
+program
+	.version(pkg.version)
+	.option('--no-daemons', 'Disable daemon processes (for debbuging)')
+	.option('--disable-clustering', 'Disable clustering')
+	.parse(process.argv);
+//#endregion
+
 main();
 
 /**
  * Init process
  */
 function main() {
-	if (cluster.isMaster) {
+	process.title = `Misskey (${cluster.isMaster ? 'master' : 'worker'})`;
+
+	if (cluster.isMaster || program.disableClustering) {
 		masterMain();
 
-		ev.mount();
-		serverStats();
-		notesStats();
-	} else {
+		if (cluster.isMaster) {
+			ev.mount();
+		}
+
+		if (program.daemons) {
+			serverStats();
+			notesStats();
+		}
+	}
+
+	if (cluster.isWorker || program.disableClustering) {
 		workerMain();
 	}
 }
@@ -67,13 +83,14 @@ async function masterMain() {
 		process.exit(1);
 	}
 
-	Logger.succ('Successfully initialized');
+	Logger.succ('Misskey initialized');
 
-	spawnWorkers(() => {
-		Logger.info(chalk.bold.green(`Now listening on port ${chalk.underline(config.port.toString())}`));
-		Logger.info(chalk.bold.green(config.url));
-		Logger.info(chalk.bold.green('Now processing jobs'));
-	});
+	if (!program.disableClustering) {
+		await spawnWorkers(config.clusterLimit);
+		Logger.succ('All workers started');
+	}
+
+	Logger.info(`Now listening on port ${config.port} on ${config.url}`);
 }
 
 /**
@@ -83,11 +100,10 @@ async function workerMain() {
 	// start server
 	await require('./server').default();
 
-	// start processor
-	require('./queue').default();
-
-	// Send a 'ready' message to parent process
-	process.send('ready');
+	if (cluster.isWorker) {
+		// Send a 'ready' message to parent process
+		process.send('ready');
+	}
 }
 
 /**
@@ -96,9 +112,9 @@ async function workerMain() {
 async function init(): Promise<Config> {
 	Logger.info('Welcome to Misskey!');
 
-	EnvironmentInfo.show();
+	new Logger('Deps').info(`Node.js ${process.version}`);
 	MachineInfo.show();
-	new DependencyInfo().showAll();
+	EnvironmentInfo.show();
 
 	const configLogger = new Logger('Config');
 	let config;
@@ -117,8 +133,7 @@ async function init(): Promise<Config> {
 		throw exception;
 	}
 
-	configLogger.succ('Successfully loaded');
-	configLogger.info(`Maintainer: ${config.maintainer.name}`);
+	configLogger.succ('Loaded');
 
 	if (process.platform === 'linux' && !isRoot() && config.port < 1024) {
 		Logger.error('You need root privileges to listen on port below 1024 on Linux');
@@ -131,35 +146,53 @@ async function init(): Promise<Config> {
 	}
 
 	// Try to connect to MongoDB
-	const mongoDBLogger = new Logger('MongoDB');
-	const db = require('./db/mongodb').default;
-	mongoDBLogger.succ('Successfully connected');
-	db.close();
+	checkMongoDb(config);
 
 	return config;
 }
 
-function spawnWorkers(onComplete: Function) {
-	// Count the machine's CPUs
-	const cpuCount = os.cpus().length;
+function checkMongoDb(config: Config) {
+	const mongoDBLogger = new Logger('MongoDB');
+	const u = config.mongodb.user ? encodeURIComponent(config.mongodb.user) : null;
+	const p = config.mongodb.pass ? encodeURIComponent(config.mongodb.pass) : null;
+	const uri = `mongodb://${u && p ? `${u}:****@` : ''}${config.mongodb.host}:${config.mongodb.port}/${config.mongodb.db}`;
+	mongoDBLogger.info(`Connecting to ${uri}`);
 
-	const progress = new ProgressBar(cpuCount, 'Starting workers');
-
-	// Create a worker for each CPU
-	for (let i = 0; i < cpuCount; i++) {
-		const worker = cluster.fork();
-		worker.on('message', message => {
-			if (message === 'ready') {
-				progress.increment();
-			}
-		});
-	}
-
-	// On all workers started
-	progress.on('complete', () => {
-		onComplete();
+	mongo.then(() => {
+		mongoDBLogger.succ('Connectivity confirmed');
+	})
+	.catch(err => {
+		mongoDBLogger.error(err.message);
 	});
 }
+
+function spawnWorkers(limit: number) {
+	return new Promise(res => {
+		// Count the machine's CPUs
+		const cpuCount = os.cpus().length;
+
+		const count = limit || cpuCount;
+
+		const progress = new ProgressBar(count, 'Starting workers');
+
+		// Create a worker for each CPU
+		for (let i = 0; i < count; i++) {
+			const worker = cluster.fork();
+			worker.on('message', message => {
+				if (message === 'ready') {
+					progress.increment();
+				}
+			});
+		}
+
+		// On all workers started
+		progress.on('complete', () => {
+			res();
+		});
+	});
+}
+
+//#region Events
 
 // Listen new workers
 cluster.on('fork', worker => {
@@ -191,3 +224,5 @@ process.on('uncaughtException', err => {
 process.on('exit', code => {
 	Logger.info(`The process is going to exit with code ${code}`);
 });
+
+//#endregion

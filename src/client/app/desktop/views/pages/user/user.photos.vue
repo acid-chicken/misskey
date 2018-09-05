@@ -1,10 +1,10 @@
 <template>
-<div class="photos">
+<div class="dzsuvbsrrrwobdxifudxuefculdfiaxd">
 	<p class="title">%fa:camera%%i18n:@title%</p>
 	<p class="initializing" v-if="fetching">%fa:spinner .pulse .fw%%i18n:@loading%<mk-ellipsis/></p>
 	<div class="stream" v-if="!fetching && images.length > 0">
 		<div v-for="image in images" class="img"
-			:style="`background-image: url(${image.url}?thumbnail&size=256)`"
+			:style="`background-image: url(${image.url})`"
 		></div>
 	</div>
 	<p class="empty" v-if="!fetching && images.length == 0">%i18n:@no-photos%</p>
@@ -39,10 +39,11 @@ export default Vue.extend({
 </script>
 
 <style lang="stylus" scoped>
-.photos
-	background #fff
+root(isDark)
+	background isDark ? #282C37 : #fff
 	border solid 1px rgba(#000, 0.075)
 	border-radius 6px
+	overflow hidden
 
 	> .title
 		z-index 1
@@ -51,7 +52,8 @@ export default Vue.extend({
 		line-height 42px
 		font-size 0.9em
 		font-weight bold
-		color #888
+		background: isDark ? #313543 : inherit
+		color isDark ? #e3e5e8 : #888
 		box-shadow 0 1px rgba(#000, 0.07)
 
 		> i
@@ -84,5 +86,11 @@ export default Vue.extend({
 
 		> i
 			margin-right 4px
+
+.dzsuvbsrrrwobdxifudxuefculdfiaxd[data-darkmode]
+	root(true)
+
+.dzsuvbsrrrwobdxifudxuefculdfiaxd:not([data-darkmode])
+	root(false)
 
 </style>

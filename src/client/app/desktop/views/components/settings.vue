@@ -48,13 +48,18 @@
 				<mk-switch v-model="$store.state.settings.iLikeSushi" @change="onChangeILikeSushi" text="%i18n:common.i-like-sushi%"/>
 			</div>
 			<mk-switch v-model="$store.state.settings.showPostFormOnTopOfTl" @change="onChangeShowPostFormOnTopOfTl" text="%i18n:@post-form-on-timeline%"/>
+			<mk-switch v-model="$store.state.settings.suggestRecentHashtags" @change="onChangeSuggestRecentHashtags" text="%i18n:@suggest-recent-hashtags%"/>
+			<mk-switch v-model="$store.state.settings.showClockOnHeader" @change="onChangeShowClockOnHeader" text="%i18n:@show-clock-on-header%"/>
 			<mk-switch v-model="$store.state.settings.showReplyTarget" @change="onChangeShowReplyTarget" text="%i18n:@show-reply-target%"/>
 			<mk-switch v-model="$store.state.settings.showMyRenotes" @change="onChangeShowMyRenotes" text="%i18n:@show-my-renotes%"/>
 			<mk-switch v-model="$store.state.settings.showRenotedMyNotes" @change="onChangeShowRenotedMyNotes" text="%i18n:@show-renoted-my-notes%"/>
+			<mk-switch v-model="$store.state.settings.showLocalRenotes" @change="onChangeShowLocalRenotes" text="%i18n:@show-local-renotes%"/>
 			<mk-switch v-model="$store.state.settings.showMaps" @change="onChangeShowMaps" text="%i18n:@show-maps%">
 				<span>%i18n:@show-maps-desc%</span>
 			</mk-switch>
-			<mk-switch v-model="$store.state.settings.reversiBoardLabels" @change="onChangeReversiBoardLabels" text="%i18n:common.show-reversi-board-labels%"/>
+			<mk-switch v-model="$store.state.settings.disableAnimatedMfm" @change="onChangeDisableAnimatedMfm" text="%i18n:common.disable-animated-mfm%"/>
+			<mk-switch v-model="$store.state.settings.games.reversi.showBoardLabels" @change="onChangeReversiBoardLabels" text="%i18n:common.show-reversi-board-labels%"/>
+			<mk-switch v-model="$store.state.settings.games.reversi.useContrastStones" @change="onChangeUseContrastReversiStones" text="%i18n:common.use-contrast-reversi-stones%"/>
 		</section>
 
 		<section class="web" v-show="page == 'web'">
@@ -188,12 +193,6 @@
 				<button class="ui button block" @click="taskmngr">%i18n:@task-manager%</button>
 			</details>
 		</section>
-
-		<section class="other" v-show="page == 'other'">
-			<h1>%i18n:@license%</h1>
-			<div v-html="license"></div>
-			<a :href="licenseUrl" target="_blank">%i18n:@third-parties%</a>
-		</section>
 	</div>
 </div>
 </template>
@@ -208,7 +207,7 @@ import XApi from './settings.api.vue';
 import XApps from './settings.apps.vue';
 import XSignins from './settings.signins.vue';
 import XDrive from './settings.drive.vue';
-import { url, docsUrl, license, lang, langs, version } from '../../../config';
+import { url, langs, version } from '../../../config';
 import checkForUpdate from '../../../common/scripts/check-for-update';
 import MkTaskManager from './taskmanager.vue';
 
@@ -227,7 +226,6 @@ export default Vue.extend({
 		return {
 			page: 'profile',
 			meta: null,
-			license,
 			version,
 			langs,
 			latestVersion: undefined,
@@ -235,10 +233,6 @@ export default Vue.extend({
 		};
 	},
 	computed: {
-		licenseUrl(): string {
-			return `${docsUrl}/${lang}/license`;
-		},
-
 		apiViaStream: {
 			get() { return this.$store.state.device.apiViaStream; },
 			set(value) { this.$store.commit('device/set', { key: 'apiViaStream', value }); }
@@ -334,6 +328,18 @@ export default Vue.extend({
 				value: v
 			});
 		},
+		onChangeSuggestRecentHashtags(v) {
+			this.$store.dispatch('settings/set', {
+				key: 'suggestRecentHashtags',
+				value: v
+			});
+		},
+		onChangeShowClockOnHeader(v) {
+			this.$store.dispatch('settings/set', {
+				key: 'showClockOnHeader',
+				value: v
+			});
+		},
 		onChangeShowReplyTarget(v) {
 			this.$store.dispatch('settings/set', {
 				key: 'showReplyTarget',
@@ -349,6 +355,12 @@ export default Vue.extend({
 		onChangeShowRenotedMyNotes(v) {
 			this.$store.dispatch('settings/set', {
 				key: 'showRenotedMyNotes',
+				value: v
+			});
+		},
+		onChangeShowLocalRenotes(v) {
+			this.$store.dispatch('settings/set', {
+				key: 'showLocalRenotes',
 				value: v
 			});
 		},
@@ -372,7 +384,19 @@ export default Vue.extend({
 		},
 		onChangeReversiBoardLabels(v) {
 			this.$store.dispatch('settings/set', {
-				key: 'reversiBoardLabels',
+				key: 'games.reversi.showBoardLabels',
+				value: v
+			});
+		},
+		onChangeUseContrastReversiStones(v) {
+			this.$store.dispatch('settings/set', {
+				key: 'games.reversi.useContrastStones',
+				value: v
+			});
+		},
+		onChangeDisableAnimatedMfm(v) {
+			this.$store.dispatch('settings/set', {
+				key: 'disableAnimatedMfm',
 				value: v
 			});
 		},

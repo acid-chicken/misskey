@@ -63,7 +63,7 @@ router.get('/apple-touch-icon.png', async ctx => {
 	});
 });
 
-// ServiceWroker
+// ServiceWorker
 router.get(/^\/sw\.(.+?)\.js$/, async ctx => {
 	await send(ctx, `/assets/sw.${ctx.params[0]}.js`, {
 		root: client
@@ -122,8 +122,7 @@ router.get('/notes/:note', async ctx => {
 router.get('*', async ctx => {
 	await send(ctx, `app/base.html`, {
 		root: client,
-		maxage: ms('3 days'),
-		immutable: true
+		maxage: ms('5m')
 	});
 });
 

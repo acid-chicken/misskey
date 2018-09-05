@@ -31,7 +31,7 @@ export default Vue.extend({
 		this.fetch();
 	},
 	mounted() {
-		document.title = 'Misskey';
+		document.title = (this as any).os.instanceName;
 	},
 	methods: {
 		fetch() {

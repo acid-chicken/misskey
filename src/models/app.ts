@@ -5,27 +5,19 @@ import db from '../db/mongodb';
 import config from '../config';
 
 const App = db.get<IApp>('apps');
-App.createIndex('nameId');
-App.createIndex('nameIdLower');
 App.createIndex('secret');
 export default App;
 
 export type IApp = {
 	_id: mongo.ObjectID;
 	createdAt: Date;
-	userId: mongo.ObjectID;
+	userId: mongo.ObjectID | null;
 	secret: string;
 	name: string;
-	nameId: string;
-	nameIdLower: string;
 	description: string;
 	permission: string[];
 	callbackUrl: string;
 };
-
-export function isValidNameId(nameId: string): boolean {
-	return typeof nameId == 'string' && /^[a-zA-Z0-9_]{1,30}$/.test(nameId);
-}
 
 /**
  * Pack an app for API response
@@ -75,8 +67,6 @@ export const pack = (
 	// Rename _id to id
 	_app.id = _app._id;
 	delete _app._id;
-
-	delete _app.nameIdLower;
 
 	// Visible by only owner
 	if (!opts.includeSecret) {

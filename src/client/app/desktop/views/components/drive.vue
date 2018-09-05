@@ -10,7 +10,10 @@
 			<span class="separator" v-if="folder != null">%fa:angle-right%</span>
 			<span class="folder current" v-if="folder != null">{{ folder.name }}</span>
 		</div>
-		<input class="search" type="search" placeholder="&#xf002; %i18n:@search%"/>
+		<!--
+			TODO: #343
+			<input class="search" type="search" placeholder="&#xf002; %i18n:@search%"/>
+		-->
 	</nav>
 	<div class="main" :class="{ uploading: uploadings.length > 0, fetching }"
 		ref="main"
@@ -320,7 +323,7 @@ export default Vue.extend({
 							});
 							break;
 						default:
-							alert('%i18n:@unhandled-error% ' + err);
+							alert(`%i18n:@unhandled-error% ${err}`);
 					}
 				});
 			}
@@ -401,7 +404,7 @@ export default Vue.extend({
 					folder: folder
 				});
 			} else {
-				window.open(url + '/i/drive/folder/' + folder.id,
+				window.open(`${url}/i/drive/folder/${folder.id}`,
 					'drive_window',
 					'height=500, width=800');
 			}
@@ -564,6 +567,7 @@ export default Vue.extend({
 			// ファイル一覧取得
 			(this as any).api('drive/files', {
 				folderId: this.folder ? this.folder.id : null,
+				untilId: this.files[this.files.length - 1].id,
 				limit: max + 1
 			}).then(files => {
 				if (files.length == max + 1) {

@@ -1,10 +1,12 @@
 import $ from 'cafy';
 import User, { ILocalUser } from '../../../../models/user';
-import event from '../../../../stream';
+import { publishUserStream } from '../../../../stream';
 
-/**
- * Update myself
- */
+export const meta = {
+	requireCredential: true,
+	secure: true
+};
+
 export default async (params: any, user: ILocalUser) => new Promise(async (res, rej) => {
 	// Get 'name' parameter
 	const [name, nameErr] = $.str.get(params.name);
@@ -24,7 +26,7 @@ export default async (params: any, user: ILocalUser) => new Promise(async (res, 
 	res();
 
 	// Publish event
-	event(user._id, 'clientSettingUpdated', {
+	publishUserStream(user._id, 'clientSettingUpdated', {
 		key: name,
 		value
 	});

@@ -1,5 +1,5 @@
 import * as websocket from 'websocket';
-import * as redis from 'redis';
+import Xev from 'xev';
 import * as CRC32 from 'crc-32';
 import ReversiGame, { pack } from '../../../../models/games/reversi/game';
 import { publishReversiGameStream } from '../../../../stream';
@@ -7,14 +7,13 @@ import Reversi from '../../../../games/reversi/core';
 import * as maps from '../../../../games/reversi/maps';
 import { ParsedUrlQuery } from 'querystring';
 
-export default function(request: websocket.request, connection: websocket.connection, subscriber: redis.RedisClient, user?: any): void {
+export default function(request: websocket.request, connection: websocket.connection, subscriber: Xev, user?: any): void {
 	const q = request.resourceURL.query as ParsedUrlQuery;
-	const gameId = q.game;
+	const gameId = q.game as string;
 
 	// Subscribe game stream
-	subscriber.subscribe(`misskey:reversi-game-stream:${gameId}`);
-	subscriber.on('message', (_, data) => {
-		connection.send(data);
+	subscriber.on(`reversi-game-stream:${gameId}`, data => {
+		connection.send(JSON.stringify(data));
 	});
 
 	connection.on('message', async (data) => {
@@ -87,8 +86,8 @@ export default function(request: websocket.request, connection: websocket.connec
 		const set = game.user1Id.equals(user._id) ? {
 			form1: form
 		} : {
-			form2: form
-		};
+				form2: form
+			};
 
 		await ReversiGame.update({ _id: gameId }, {
 			$set: set
@@ -117,8 +116,8 @@ export default function(request: websocket.request, connection: websocket.connec
 		const set = game.user1Id.equals(user._id) ? {
 			form2: form
 		} : {
-			form1: form
-		};
+				form1: form
+			};
 
 		await ReversiGame.update({ _id: gameId }, {
 			$set: set
@@ -193,7 +192,7 @@ export default function(request: websocket.request, connection: websocket.connec
 				function getRandomMap() {
 					const mapCount = Object.entries(maps).length;
 					const rnd = Math.floor(Math.random() * mapCount);
-					return Object.entries(maps).find((x, i) => i == rnd)[1].data;
+					return Object.values(maps)[rnd].data;
 				}
 
 				const map = freshGame.settings.map != null ? freshGame.settings.map : getRandomMap();
@@ -227,11 +226,11 @@ export default function(request: websocket.request, connection: websocket.connec
 					await ReversiGame.update({
 						_id: gameId
 					}, {
-						$set: {
-							isEnded: true,
-							winnerId: winner
-						}
-					});
+							$set: {
+								isEnded: true,
+								winnerId: winner
+							}
+						});
 
 					publishReversiGameStream(gameId, 'ended', {
 						winnerId: winner,
@@ -293,15 +292,15 @@ export default function(request: websocket.request, connection: websocket.connec
 		await ReversiGame.update({
 			_id: gameId
 		}, {
-			$set: {
-				crc32,
-				isEnded: o.isEnded,
-				winnerId: winner
-			},
-			$push: {
-				logs: log
-			}
-		});
+				$set: {
+					crc32,
+					isEnded: o.isEnded,
+					winnerId: winner
+				},
+				$push: {
+					logs: log
+				}
+			});
 
 		publishReversiGameStream(gameId, 'set', Object.assign(log, {
 			next: o.turn

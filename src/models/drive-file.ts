@@ -10,7 +10,7 @@ import DriveFileThumbnail, { deleteDriveFileThumbnail } from './drive-file-thumb
 
 const DriveFile = monkDb.get<IDriveFile>('driveFiles.files');
 DriveFile.createIndex('md5');
-DriveFile.createIndex('metadata.uri', { sparse: true, unique: true });
+DriveFile.createIndex('metadata.uri');
 export default DriveFile;
 
 export const DriveFileChunk = monkDb.get('driveFiles.chunks');
@@ -31,8 +31,18 @@ export type IMetadata = {
 	comment: string;
 	uri?: string;
 	url?: string;
+	thumbnailUrl?: string;
+	src?: string;
 	deletedAt?: Date;
-	isMetaOnly?: boolean;
+	withoutChunks?: boolean;
+	storage?: string;
+	storageProps?: any;
+	isSensitive?: boolean;
+
+	/**
+	 * 外部の(信頼されていない)URLへの直リンクか否か
+	 */
+	isRemote?: boolean;
 };
 
 export type IDriveFile = {
@@ -42,6 +52,11 @@ export type IDriveFile = {
 	filename: string;
 	contentType: string;
 	metadata: IMetadata;
+
+	/**
+	 * ファイルサイズ
+	 */
+	length: number;
 };
 
 export function validateFileName(name: string): boolean {
@@ -154,9 +169,9 @@ export const pack = (
 
 	_target = Object.assign(_target, _file.metadata);
 
-	_target.src = _file.metadata.url;
-	_target.url = _file.metadata.isMetaOnly ? _file.metadata.url : `${config.drive_url}/${_target.id}/${encodeURIComponent(_target.name)}`;
-	_target.isRemote = _file.metadata.isMetaOnly;
+	_target.url = _file.metadata.url ? _file.metadata.url : `${config.drive_url}/${_target.id}/${encodeURIComponent(_target.name)}`;
+	_target.thumbnailUrl = _file.metadata.thumbnailUrl ? _file.metadata.thumbnailUrl : _file.metadata.url ? _file.metadata.url : `${config.drive_url}/${_target.id}/${encodeURIComponent(_target.name)}?thumbnail`;
+	_target.isRemote = _file.metadata.isRemote;
 
 	if (_target.properties == null) _target.properties = {};
 
@@ -177,6 +192,11 @@ export const pack = (
 		}
 		*/
 	}
+
+	delete _target.withoutChunks;
+	delete _target.storage;
+	delete _target.storageProps;
+	delete _target.isRemote;
 
 	resolve(_target);
 });

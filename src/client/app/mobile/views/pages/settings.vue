@@ -2,7 +2,7 @@
 <mk-ui>
 	<span slot="header">%fa:cog%%i18n:@settings%</span>
 	<main :data-darkmode="$store.state.device.darkmode">
-		<div class="signin-as" v-html="'%i18n:@signed-in-as%'.replace('{}', '<b>' + name + '</b>')"></div>
+		<div class="signin-as" v-html="'%i18n:@signed-in-as%'.replace('{}', `<b>${name}</b>`)"></div>
 
 		<div>
 			<x-profile/>
@@ -10,73 +10,105 @@
 			<ui-card>
 				<div slot="title">%fa:palette% %i18n:@design%</div>
 
-				<ui-switch v-model="darkmode">%i18n:@dark-mode%</ui-switch>
-				<ui-switch v-model="$store.state.settings.circleIcons" @change="onChangeCircleIcons">%i18n:@circle-icons%</ui-switch>
-				<ui-switch v-model="$store.state.settings.iLikeSushi" @change="onChangeILikeSushi">%i18n:common.i-like-sushi%</ui-switch>
-				<ui-switch v-model="$store.state.settings.reversiBoardLabels" @change="onChangeReversiBoardLabels">%i18n:common.show-reversi-board-labels%</ui-switch>
+				<section>
+					<ui-switch v-model="darkmode">%i18n:@dark-mode%</ui-switch>
+					<ui-switch v-model="$store.state.settings.circleIcons" @change="onChangeCircleIcons">%i18n:@circle-icons%</ui-switch>
+					<ui-switch v-model="$store.state.settings.iLikeSushi" @change="onChangeILikeSushi">%i18n:common.i-like-sushi%</ui-switch>
+					<ui-switch v-model="$store.state.settings.disableAnimatedMfm" @change="onChangeDisableAnimatedMfm">%i18n:common.disable-animated-mfm%</ui-switch>
+					<ui-switch v-model="$store.state.settings.games.reversi.showBoardLabels" @change="onChangeReversiBoardLabels">%i18n:common.show-reversi-board-labels%</ui-switch>
+					<ui-switch v-model="$store.state.settings.games.reversi.useContrastStones" @change="onChangeUseContrastReversiStones">%i18n:common.use-contrast-reversi-stones%</ui-switch>
+				</section>
 
-				<div>
-					<div>%i18n:@timeline%</div>
-					<ui-switch v-model="$store.state.settings.showReplyTarget" @change="onChangeShowReplyTarget">%i18n:@show-reply-target%</ui-switch>
-					<ui-switch v-model="$store.state.settings.showMyRenotes" @change="onChangeShowMyRenotes">%i18n:@show-my-renotes%</ui-switch>
-					<ui-switch v-model="$store.state.settings.showRenotedMyNotes" @change="onChangeShowRenotedMyNotes">%i18n:@show-renoted-my-notes%</ui-switch>
-				</div>
+				<section>
+					<header>%i18n:@timeline%</header>
+					<div>
+						<ui-switch v-model="$store.state.settings.showReplyTarget" @change="onChangeShowReplyTarget">%i18n:@show-reply-target%</ui-switch>
+						<ui-switch v-model="$store.state.settings.showMyRenotes" @change="onChangeShowMyRenotes">%i18n:@show-my-renotes%</ui-switch>
+						<ui-switch v-model="$store.state.settings.showRenotedMyNotes" @change="onChangeShowRenotedMyNotes">%i18n:@show-renoted-my-notes%</ui-switch>
+						<ui-switch v-model="$store.state.settings.showLocalRenotes" @change="onChangeShowLocalRenotes">%i18n:@show-local-renotes%</ui-switch>
+					</div>
+				</section>
 
-				<div>
-					<div>%i18n:@post-style%</div>
+				<section>
+					<header>%i18n:@post-style%</header>
 					<ui-radio v-model="postStyle" value="standard">%i18n:@post-style-standard%</ui-radio>
 					<ui-radio v-model="postStyle" value="smart">%i18n:@post-style-smart%</ui-radio>
-				</div>
+				</section>
+
+				<section>
+					<header>%i18n:@notification-position%</header>
+					<ui-radio v-model="mobileNotificationPosition" value="bottom">%i18n:@notification-position-bottom%</ui-radio>
+					<ui-radio v-model="mobileNotificationPosition" value="top">%i18n:@notification-position-top%</ui-radio>
+				</section>
 			</ui-card>
 
 			<ui-card>
 				<div slot="title">%fa:cog% %i18n:@behavior%</div>
-				<ui-switch v-model="$store.state.settings.fetchOnScroll" @change="onChangeFetchOnScroll">%i18n:@fetch-on-scroll%</ui-switch>
-				<ui-switch v-model="$store.state.settings.disableViaMobile" @change="onChangeDisableViaMobile">%i18n:@disable-via-mobile%</ui-switch>
-				<ui-switch v-model="loadRawImages">%i18n:@load-raw-images%</ui-switch>
-				<ui-switch v-model="$store.state.settings.loadRemoteMedia" @change="onChangeLoadRemoteMedia">%i18n:@load-remote-media%</ui-switch>
-				<ui-switch v-model="lightmode">%i18n:@i-am-under-limited-internet%</ui-switch>
+
+				<section>
+					<ui-switch v-model="$store.state.settings.fetchOnScroll" @change="onChangeFetchOnScroll">%i18n:@fetch-on-scroll%</ui-switch>
+					<ui-switch v-model="$store.state.settings.disableViaMobile" @change="onChangeDisableViaMobile">%i18n:@disable-via-mobile%</ui-switch>
+					<ui-switch v-model="loadRawImages">%i18n:@load-raw-images%</ui-switch>
+					<ui-switch v-model="$store.state.settings.loadRemoteMedia" @change="onChangeLoadRemoteMedia">%i18n:@load-remote-media%</ui-switch>
+					<ui-switch v-model="lightmode">%i18n:@i-am-under-limited-internet%</ui-switch>
+				</section>
+			</ui-card>
+
+			<ui-card>
+				<div slot="title">%fa:volume-up% %i18n:@sound%</div>
+
+				<section>
+					<ui-switch v-model="enableSounds">%i18n:@enable-sounds%</ui-switch>
+				</section>
 			</ui-card>
 
 			<ui-card>
 				<div slot="title">%fa:language% %i18n:@lang%</div>
 
-				<ui-select v-model="lang" placeholder="%i18n:@auto%">
-					<optgroup label="%i18n:@recommended%">
-						<option value="">%i18n:@auto%</option>
-					</optgroup>
+				<section class="fit-top">
+					<ui-select v-model="lang" placeholder="%i18n:@auto%">
+						<optgroup label="%i18n:@recommended%">
+							<option value="">%i18n:@auto%</option>
+						</optgroup>
 
-					<optgroup label="%i18n:@specify-language%">
-						<option v-for="x in langs" :value="x[0]" :key="x[0]">{{ x[1] }}</option>
-					</optgroup>
-				</ui-select>
-				<span>%fa:info-circle% %i18n:@lang-tip%</span>
+						<optgroup label="%i18n:@specify-language%">
+							<option v-for="x in langs" :value="x[0]" :key="x[0]">{{ x[1] }}</option>
+						</optgroup>
+					</ui-select>
+					<span>%fa:info-circle% %i18n:@lang-tip%</span>
+				</section>
 			</ui-card>
 
 			<ui-card>
 				<div slot="title">%fa:B twitter% %i18n:@twitter%</div>
 
-				<p class="account" v-if="$store.state.i.twitter"><a :href="`https://twitter.com/${$store.state.i.twitter.screenName}`" target="_blank">@{{ $store.state.i.twitter.screenName }}</a></p>
-				<p>
-					<a :href="`${apiUrl}/connect/twitter`" target="_blank">{{ $store.state.i.twitter ? '%i18n:@twitter-reconnect%' : '%i18n:@twitter-connect%' }}</a>
-					<span v-if="$store.state.i.twitter"> or </span>
-					<a :href="`${apiUrl}/disconnect/twitter`" target="_blank" v-if="$store.state.i.twitter">%i18n:@twitter-disconnect%</a>
-				</p>
+				<section>
+					<p class="account" v-if="$store.state.i.twitter"><a :href="`https://twitter.com/${$store.state.i.twitter.screenName}`" target="_blank">@{{ $store.state.i.twitter.screenName }}</a></p>
+					<p>
+						<a :href="`${apiUrl}/connect/twitter`" target="_blank">{{ $store.state.i.twitter ? '%i18n:@twitter-reconnect%' : '%i18n:@twitter-connect%' }}</a>
+						<span v-if="$store.state.i.twitter"> or </span>
+						<a :href="`${apiUrl}/disconnect/twitter`" target="_blank" v-if="$store.state.i.twitter">%i18n:@twitter-disconnect%</a>
+					</p>
+				</section>
 			</ui-card>
 
 			<ui-card>
 				<div slot="title">%fa:sync-alt% %i18n:@update%</div>
 
-				<div>%i18n:@version% <i>{{ version }}</i></div>
-				<template v-if="latestVersion !== undefined">
-					<div>%i18n:@latest-version% <i>{{ latestVersion ? latestVersion : version }}</i></div>
-				</template>
-				<ui-button @click="checkForUpdate" :disabled="checkingForUpdate">
-					<template v-if="checkingForUpdate">%i18n:@update-checking%<mk-ellipsis/></template>
-					<template v-else>%i18n:@check-for-updates%</template>
-				</ui-button>
+				<section>
+					<div>%i18n:@version% <i>{{ version }}</i></div>
+					<template v-if="latestVersion !== undefined">
+						<div>%i18n:@latest-version% <i>{{ latestVersion ? latestVersion : version }}</i></div>
+					</template>
+					<ui-button @click="checkForUpdate" :disabled="checkingForUpdate">
+						<template v-if="checkingForUpdate">%i18n:@update-checking%<mk-ellipsis/></template>
+						<template v-else>%i18n:@check-for-updates%</template>
+					</ui-button>
+				</section>
 			</ui-card>
 		</div>
+
+		<div class="signout" @click="signout">%i18n:@signout%</div>
 
 		<footer>
 			<small>ver {{ version }} ({{ codename }})</small>
@@ -123,6 +155,11 @@ export default Vue.extend({
 			set(value) { this.$store.commit('device/set', { key: 'postStyle', value }); }
 		},
 
+		mobileNotificationPosition: {
+			get() { return this.$store.state.device.mobileNotificationPosition; },
+			set(value) { this.$store.commit('device/set', { key: 'mobileNotificationPosition', value }); }
+		},
+
 		lightmode: {
 			get() { return this.$store.state.device.lightmode; },
 			set(value) { this.$store.commit('device/set', { key: 'lightmode', value }); }
@@ -137,10 +174,15 @@ export default Vue.extend({
 			get() { return this.$store.state.device.lang; },
 			set(value) { this.$store.commit('device/set', { key: 'lang', value }); }
 		},
+
+		enableSounds: {
+			get() { return this.$store.state.device.enableSounds; },
+			set(value) { this.$store.commit('device/set', { key: 'enableSounds', value }); }
+		},
 	},
 
 	mounted() {
-		document.title = 'Misskey | %i18n:@settings%';
+		document.title = '%i18n:@settings%';
 	},
 
 	methods: {
@@ -185,7 +227,21 @@ export default Vue.extend({
 
 		onChangeReversiBoardLabels(v) {
 			this.$store.dispatch('settings/set', {
-				key: 'reversiBoardLabels',
+				key: 'games.reversi.showBoardLabels',
+				value: v
+			});
+		},
+
+		onChangeUseContrastReversiStones(v) {
+			this.$store.dispatch('settings/set', {
+				key: 'games.reversi.useContrastStones',
+				value: v
+			});
+		},
+
+		onChangeDisableAnimatedMfm(v) {
+			this.$store.dispatch('settings/set', {
+				key: 'disableAnimatedMfm',
 				value: v
 			});
 		},
@@ -207,6 +263,13 @@ export default Vue.extend({
 		onChangeShowRenotedMyNotes(v) {
 			this.$store.dispatch('settings/set', {
 				key: 'showRenotedMyNotes',
+				value: v
+			});
+		},
+
+		onChangeShowLocalRenotes(v) {
+			this.$store.dispatch('settings/set', {
+				key: 'showLocalRenotes',
 				value: v
 			});
 		},
@@ -236,7 +299,7 @@ export default Vue.extend({
 <style lang="stylus" scoped>
 root(isDark)
 	margin 0 auto
-	max-width 500px
+	max-width 600px
 	width 100%
 
 	> .signin-as
@@ -245,6 +308,14 @@ root(isDark)
 		text-align center
 		color isDark ? #49ab63 : #2c662d
 		background isDark ? #273c34 : #fcfff5
+		box-shadow 0 3px 1px -2px rgba(#000, 0.2), 0 2px 2px 0 rgba(#000, 0.14), 0 1px 5px 0 rgba(#000, 0.12)
+
+	> .signout
+		margin 16px
+		padding 16px
+		text-align center
+		color isDark ? #ff5f56 : #cc2727
+		background isDark ? #652222 : #fff6f5
 		box-shadow 0 3px 1px -2px rgba(#000, 0.2), 0 2px 2px 0 rgba(#000, 0.14), 0 1px 5px 0 rgba(#000, 0.12)
 
 	> footer

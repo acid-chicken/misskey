@@ -44,8 +44,8 @@
 				<mk-media-list :media-list="p.media" :raw="true"/>
 			</div>
 			<mk-poll v-if="p.poll" :note="p"/>
-			<mk-url-preview v-for="url in urls" :url="url" :key="url"/>
-			<a class="location" v-if="p.geo" :href="`http://maps.google.com/maps?q=${p.geo.coordinates[1]},${p.geo.coordinates[0]}`" target="_blank">%fa:map-marker-alt% %i18n:@location%</a>
+			<mk-url-preview v-for="url in urls" :url="url" :key="url" :detail="true"/>
+			<a class="location" v-if="p.geo" :href="`https://maps.google.com/maps?q=${p.geo.coordinates[1]},${p.geo.coordinates[0]}`" target="_blank">%fa:map-marker-alt% %i18n:@location%</a>
 			<div class="map" v-if="p.geo" ref="map"></div>
 			<div class="renote" v-if="p.renote">
 				<mk-note-preview :note="p.renote"/>
@@ -116,9 +116,11 @@ export default Vue.extend({
 				this.note.mediaIds.length == 0 &&
 				this.note.poll == null);
 		},
+
 		p(): any {
 			return this.isRenote ? this.note.renote : this.note;
 		},
+
 		reactionsCount(): number {
 			return this.p.reactionCounts
 				? Object.keys(this.p.reactionCounts)
@@ -126,6 +128,7 @@ export default Vue.extend({
 					.reduce((a, b) => a + b)
 				: 0;
 		},
+
 		urls(): string[] {
 			if (this.p.text) {
 				const ast = parse(this.p.text);
@@ -180,16 +183,19 @@ export default Vue.extend({
 				this.conversation = conversation.reverse();
 			});
 		},
+
 		reply() {
 			(this as any).apis.post({
 				reply: this.p
 			});
 		},
+
 		renote() {
 			(this as any).apis.post({
 				renote: this.p
 			});
 		},
+
 		react() {
 			(this as any).os.new(MkReactionPicker, {
 				source: this.$refs.reactButton,
@@ -198,6 +204,7 @@ export default Vue.extend({
 				big: true
 			});
 		},
+
 		menu() {
 			(this as any).os.new(MkNoteMenu, {
 				source: this.$refs.menuButton,

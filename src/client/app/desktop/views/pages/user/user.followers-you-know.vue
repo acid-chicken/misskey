@@ -1,10 +1,10 @@
 <template>
-<div class="followers-you-know">
+<div class="vahgrswmbzfdlmomxnqftuueyvwaafth">
 	<p class="title">%fa:users%%i18n:@title%</p>
 	<p class="initializing" v-if="fetching">%fa:spinner .pulse .fw%%i18n:@loading%<mk-ellipsis/></p>
 	<div v-if="!fetching && users.length > 0">
 	<router-link v-for="user in users" :to="user | userPage" :key="user.id">
-		<img :src="`${user.avatarUrl}?thumbnail&size=64`" :alt="user | userName" v-user-preview="user.id"/>
+		<img :src="user.avatarUrl" :alt="user | userName" v-user-preview="user.id"/>
 	</router-link>
 	</div>
 	<p class="empty" v-if="!fetching && users.length == 0">%i18n:@no-users%</p>
@@ -36,8 +36,8 @@ export default Vue.extend({
 </script>
 
 <style lang="stylus" scoped>
-.followers-you-know
-	background #fff
+root(isDark)
+	background isDark ? #282C37 : #fff
 	border solid 1px rgba(#000, 0.075)
 	border-radius 6px
 
@@ -48,7 +48,7 @@ export default Vue.extend({
 		line-height 42px
 		font-size 0.9em
 		font-weight bold
-		color #888
+		color isDark ? #e3e5e8 : #888
 		box-shadow 0 1px rgba(#000, 0.07)
 
 		> i
@@ -76,5 +76,11 @@ export default Vue.extend({
 
 		> i
 			margin-right 4px
+
+.vahgrswmbzfdlmomxnqftuueyvwaafth[data-darkmode]
+	root(true)
+
+.vahgrswmbzfdlmomxnqftuueyvwaafth:not([data-darkmode])
+	root(false)
 
 </style>

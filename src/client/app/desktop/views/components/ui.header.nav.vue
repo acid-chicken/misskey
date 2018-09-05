@@ -2,16 +2,16 @@
 <div class="nav">
 	<ul>
 		<template v-if="$store.getters.isSignedIn">
-			<li class="home" :class="{ active: $route.name == 'index' }">
+			<li class="home" :class="{ active: $route.name == 'index' }" @click="goToTop">
 				<router-link to="/">
 					%fa:home%
 					<p>%i18n:@home%</p>
 				</router-link>
 			</li>
-			<li class="deck" :class="{ active: $route.name == 'deck' }">
+			<li class="deck" :class="{ active: $route.name == 'deck' }" @click="goToTop">
 				<router-link to="/deck">
 					%fa:columns%
-					<p>%i18n:@deck% <small>(beta)</small></p>
+					<p>%i18n:@deck%</p>
 				</router-link>
 			</li>
 			<li class="messaging">
@@ -82,6 +82,13 @@ export default Vue.extend({
 
 		game() {
 			(this as any).os.new(MkGameWindow);
+		},
+
+		goToTop() {
+			window.scrollTo({
+				top: 0,
+				behavior: 'smooth'
+			});
 		}
 	}
 });

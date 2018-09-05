@@ -1,12 +1,12 @@
 <template>
 <div class="pptjhabgjtt7kwskbfv4y3uml6fpuhmr">
-	<h1>Misskeyで共有</h1>
+	<h1>{{ '%i18n:@share-with%'.replace('{}', name) }}</h1>
 	<div>
 		<mk-signin v-if="!$store.getters.isSignedIn"/>
 		<mk-post-form v-else-if="!posted" :initial-text="text" :instant="true" @posted="posted = true"/>
 		<p v-if="posted" class="posted">%fa:check%</p>
 	</div>
-	<button v-if="posted" class="ui button" @click="close">閉じる</button>
+	<button v-if="posted" class="ui button" @click="close">%i18n:common.close%</button>
 </div>
 </template>
 
@@ -16,6 +16,7 @@ import Vue from 'vue';
 export default Vue.extend({
 	data() {
 		return {
+			name: null,
 			posted: false,
 			text: new URLSearchParams(location.search).get('text')
 		};
@@ -24,6 +25,11 @@ export default Vue.extend({
 		close() {
 			window.close();
 		}
+	},
+	mounted() {
+		(this as any).os.getMeta().then(meta => {
+			this.name = meta.name;
+		});
 	}
 });
 </script>
